@@ -27,6 +27,14 @@ const request = <T>(config:RequestConfig):Promise<ResponseData<T>> => {
   
   const requestUrl = config.baseUrl || baseUrl + finalUrl;
   
+  // 是否需要设置 token
+  const isToken = (config.header || {}).isToken === false
+  config.header = config.header || {}
+  if (getToken() && !isToken) {
+    config.header['Authorization'] = 'Bearer ' + getToken(),
+	config.header['clientid'] = clientId
+  }
+  
   console.log('🚀 ====== 请求开始 ======');
   console.log('📌 请求地址:', requestUrl);
   console.log('📌 请求方法:', config.method || 'GET');
@@ -34,14 +42,6 @@ const request = <T>(config:RequestConfig):Promise<ResponseData<T>> => {
   console.log('📌 请求参数(params):', config.params);
   console.log('📌 请求头:', config.header);
   console.log('🚀 ====== 请求结束 ======');
-  
-  // 是否需要设置 token
-  const isToken = (config.headers || {}).isToken === false
-  config.header = config.header || {}
-  if (getToken() && !isToken) {
-    config.header['Authorization'] = 'Bearer ' + getToken(),
-	config.header['clientid'] = clientId
-  }
   return new Promise((resolve, reject) => {
     uni.request({
       method: config.method || 'GET',
@@ -51,13 +51,20 @@ const request = <T>(config:RequestConfig):Promise<ResponseData<T>> => {
       header: config.header,
       dataType: 'json'
     }).then(response => {
-      /* let [error, res] = response
-       if (error) {
-         toast('后端接口连接异常')
-         reject('后端接口连接异常')
-         return
-       } */
-      const res = response
+      // 检查response是否是数组
+      let error, res;
+      if (Array.isArray(response)) {
+        [error, res] = response;
+      } else {
+        // 如果不是数组，直接使用response作为res，error为null
+        error = null;
+        res = response;
+      }
+      if (error) {
+        toast('后端接口连接异常')
+        reject('后端接口连接异常')
+        return
+      }
       const data:ResponseData<T> = res.data as ResponseData<T>
       
       console.log('📥 ====== 响应开始 ======');

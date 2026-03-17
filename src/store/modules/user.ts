@@ -70,17 +70,18 @@ const user: Module<UserState, UserState> = {
           console.log("登录用户信息为：",data.data);
           // 保存用户信息到本地存储
           if (data.data) {
-            uni.setStorageSync('USER_INFO', data.data.userInfo);
-            uni.setStorageSync('APP_COLOR', data.data.userInfo.theme);
-            uni.setStorageSync('MSG_TIME', data.data.msgtime);
-            uni.setStorageSync('WATER_MARK', data.data.waterMark);
-            uni.setStorageSync('WATER_MARK_CONTENT', data.data.waterMarkContent);
-            uni.setStorageSync('WATER_MARK_SUBTEXT', data.data.waterMarkSubtext);
-            
-            // 保存用户配置
-            const userInfo = data.data.userInfo;
-            uni.setStorageSync('USER_DARK_MODE', userInfo.dark === 'true' ? true : false);
-            uni.setStorageSync('USER_LANGUAGE', userInfo.language || 'zh-cn');
+            uni.setStorageSync('USER_INFO', data.data.userInfo || {});
+            // 添加安全检查，确保userInfo存在
+            if (data.data.userInfo) {
+              uni.setStorageSync('APP_COLOR', data.data.userInfo.theme || '');
+              uni.setStorageSync('USER_DARK_MODE', data.data.userInfo.dark === 'true' ? true : false);
+              uni.setStorageSync('USER_LANGUAGE', data.data.userInfo.language || 'zh-cn');
+            }
+            // 保存其他数据，添加安全检查
+            uni.setStorageSync('MSG_TIME', data.data.msgtime || '');
+            uni.setStorageSync('WATER_MARK', data.data.waterMark || '');
+            uni.setStorageSync('WATER_MARK_CONTENT', data.data.waterMarkContent || '');
+            uni.setStorageSync('WATER_MARK_SUBTEXT', data.data.waterMarkSubtext || '');
           }
           
           resolve(data)

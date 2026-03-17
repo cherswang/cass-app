@@ -4,12 +4,12 @@
 
 import office from './model/office.js';
 import system from './model/system.js';
-import bpm from './model/bpm.js';
+import bpmModule from './model/bpm.js';
 
 const modules = {
   office,
   system,
-  bpm
+  ...bpmModule
 };
 
 export default modules

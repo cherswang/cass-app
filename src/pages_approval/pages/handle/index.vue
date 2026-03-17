@@ -18,9 +18,29 @@
         <view v-else>
           <!-- 解析并显示表单数据 -->
           <view v-if="formJson && formJson.widgetList" class="form-fields">
-            <!-- 递归解析widgetList -->
             <view class="form-rows">
-              <widget-item v-for="(widget, index) in formJson.widgetList" :key="widget.id || index" :widget="widget" />
+              <view v-for="(widget, index) in formJson.widgetList" :key="widget.id || index">
+                <!-- 处理表格类型 -->
+                <view v-if="widget.type === 'table' && widget.rows" class="table-widget">
+                  <view v-for="(row, rowIndex) in widget.rows" :key="row.id || rowIndex" class="table-row">
+                    <view v-for="(col, colIndex) in row.cols" :key="col.id || colIndex" class="table-col">
+                      <view v-for="(subWidget, subIndex) in (col.widgetList || [])" :key="subWidget.id || subIndex">
+                        <view v-html="renderWidget(subWidget)"></view>
+                      </view>
+                    </view>
+                  </view>
+                </view>
+                <!-- 处理网格类型 -->
+                <view v-else-if="widget.type === 'grid' && widget.cols" class="grid-widget">
+                  <view v-for="(col, colIndex) in widget.cols" :key="col.id || colIndex" class="grid-col">
+                    <view v-for="(subWidget, subIndex) in (col.widgetList || [])" :key="subWidget.id || subIndex">
+                      <view v-html="renderWidget(subWidget)"></view>
+                    </view>
+                  </view>
+                </view>
+                <!-- 处理其他类型 -->
+                <view v-else v-html="renderWidget(widget)"></view>
+              </view>
             </view>
           </view>
           <view v-else-if="formData" class="form-fields">
@@ -41,10 +61,19 @@
     <!-- 审批意见 -->
     <view class="approval-section">
       <view class="approval-content">
+        <!-- 审批状态选择 -->
+        <view class="approval-status">
+          <text class="status-label">审批意见：</text>
+          <view class="status-options">
+            <view class="status-item" :class="{ active: bpmStepRun.passStatus === '1' }" @click="bpmStepRun.passStatus = '1'">同意</view>
+            <view class="status-item" :class="{ active: bpmStepRun.passStatus === '0' }" @click="bpmStepRun.passStatus = '0'">不同意</view>
+          </view>
+        </view>
+
         <!-- 会签意见输入 -->
         <view class="approval-comment">
           <text class="comment-title">会签意见</text>
-          <textarea class="comment-input" v-model="bpmStepRun.ideaText" placeholder="请输入审批意见"></textarea>
+          <textarea class="comment-input" v-model="bpmStepRun.ideaText" placeholder="请输入会签意见"></textarea>
         </view>
 
         <!-- 常用意见 -->
@@ -59,64 +88,19 @@
 
     <!-- 操作按钮 -->
     <view class="action-buttons">
-      <text class="buttons-title">审批意见</text>
       <view class="buttons-container">
-        <button class="btn reject" @click="handleReject">不同意</button>
-        <button class="btn approve" @click="handleApprove">同意</button>
+        <button class="btn save" @click="saveFormData">保存</button>
+        <button class="btn submit" @click="sendBpmToNext">提交</button>
       </view>
     </view>
   </view>
 </template>
 
 <script>
-import API from '@/api/model/bpm';
+import API from '@/api';
 
 export default {
-  components: {
-    'widget-item': {
-      props: {
-        widget: {
-          type: Object,
-          required: true
-        }
-      },
-      template: `
-        <view>
-          <!-- 处理表格类型 -->
-          <view v-if="widget.type === 'table' && widget.rows" class="table-widget">
-            <view v-for="(row, rowIndex) in widget.rows" :key="row.id || rowIndex" class="table-row">
-              <view v-for="(col, colIndex) in row.cols" :key="col.id || colIndex" class="table-col">
-                <widget-item v-for="(subWidget, subIndex) in col.widgetList" :key="subWidget.id || subIndex" :widget="subWidget" />
-              </view>
-            </view>
-          </view>
-          <!-- 处理网格类型 -->
-          <view v-else-if="widget.type === 'grid' && widget.cols" class="grid-widget">
-            <view v-for="(col, colIndex) in widget.cols" :key="col.id || colIndex" class="grid-col">
-              <widget-item v-for="(subWidget, subIndex) in col.widgetList" :key="subWidget.id || subIndex" :widget="subWidget" />
-            </view>
-          </view>
-          <!-- 处理静态文本 -->
-          <view v-else-if="widget.type === 'static-text'" class="static-text-widget">
-            <text class="static-text">{{ widget.options.textContent }}</text>
-          </view>
-          <!-- 处理表单字段 -->
-          <view v-else-if="widget.formItemFlag !== false" class="form-field">
-            <text class="field-label">{{ widget.options.label || widget.options.name }}：</text>
-            <view class="field-input">
-              <input v-if="widget.options.type === 'text'" :value="widget.options.defaultValue" disabled />
-              <textarea v-else-if="widget.options.type === 'textarea'" :value="widget.options.defaultValue" disabled></textarea>
-              <text v-else class="field-value">{{ widget.options.defaultValue || '无' }}</text>
-            </view>
-          </view>
-          <!-- 递归处理其他容器类型 -->
-          <view v-else-if="widget.widgetList" class="container-widget">
-            <widget-item v-for="(subWidget, subIndex) in widget.widgetList" :key="subWidget.id || subIndex" :widget="subWidget" />
-          </view>
-        </view>
-      `
-    }
-  },
+  components: {},
   data() {
     return {
       // 加载状态
@@ -142,7 +126,8 @@ export default {
         stepRunId: '',
         ideaText: '',
         passStatus: '1',
-        stepAttach: ''
+        stepAttach: '',
+        signBase64: ''
       },
       // 表单信息
       formJson: null,
@@ -171,6 +156,77 @@ export default {
     this.getBpmCommIdeaList();
   },
   methods: {
+    // 渲染单个组件
+    renderWidget(widget) {
+      if (!widget) return '';
+      
+      // 处理容器类型组件
+      if (widget.category === 'container') {
+        // 处理网格容器
+        if (widget.type === 'grid' && widget.cols) {
+          return widget.cols.map((col, colIndex) => {
+            return col.widgetList ? col.widgetList.map((subWidget, subIndex) => {
+              return this.renderWidget(subWidget);
+            }).join('') : '';
+          }).join('');
+        }
+        
+        // 处理表格容器
+        if (widget.type === 'table' && widget.rows) {
+          return widget.rows.map((row, rowIndex) => {
+            return row.cols ? row.cols.map((col, colIndex) => {
+              return col.widgetList ? col.widgetList.map((subWidget, subIndex) => {
+                return this.renderWidget(subWidget);
+              }).join('') : '';
+            }).join('') : '';
+          }).join('');
+        }
+        
+        // 处理其他容器类型
+        if (widget.widgetList) {
+          return widget.widgetList.map((subWidget, subIndex) => {
+            return this.renderWidget(subWidget);
+          }).join('');
+        }
+      }
+      
+      // 处理字段类型组件
+      if (widget.formItemFlag !== false) {
+        const label = widget.options ? (widget.options.label || widget.options.name || '') : '';
+        let value = '';
+        
+        if (widget.type === 'input' && widget.options) {
+          if (widget.options.type === 'text') {
+            value = widget.options.defaultValue || '';
+            return `<view class="form-field"><text class="field-label">${label}：</text><view class="field-input"><input value="${value}" disabled /></view></view>`;
+          } else if (widget.options.type === 'textarea') {
+            value = widget.options.defaultValue || '';
+            return `<view class="form-field"><text class="field-label">${label}：</text><view class="field-input"><textarea value="${value}" disabled></textarea></view></view>`;
+          }
+        } else if (widget.type === 'date-range' && widget.options && widget.options.defaultValue) {
+          value = widget.options.defaultValue.join(' ~ ');
+          return `<view class="form-field"><text class="field-label">${label}：</text><view class="field-input"><text class="field-value">${value}</text></view></view>`;
+        } else {
+          value = widget.options ? widget.options.defaultValue || '无' : '无';
+          return `<view class="form-field"><text class="field-label">${label}：</text><view class="field-input"><text class="field-value">${value}</text></view></view>`;
+        }
+      }
+      
+      // 处理静态文本
+      if (widget.type === 'static-text') {
+        const text = widget.options ? widget.options.textContent || '' : '';
+        return `<view class="static-text-widget"><text class="static-text">${text}</text></view>`;
+      }
+      
+      // 处理HTML文本
+      if (widget.type === 'html-text') {
+        const html = widget.options ? widget.options.htmlContent || '' : '';
+        return `<view class="html-text-widget"><text class="html-text">${html}</text></view>`;
+      }
+      
+      // 默认空
+      return '';
+    },
     // 获取办理表单数据
     async getHandleBpmFormDataBean() {
       try {
@@ -180,7 +236,7 @@ export default {
           stepRunId: this.bpmStepRun.stepRunId
         });
         // 参考Vue后台的参数顺序
-        const res = await API.bpmForm.getHandleBpmFormDataBean.get({
+        const res = await API.bpm.bpmForm.getHandleBpmFormDataBean.get({
           flowId: this.bpmList.flowId,
           runId: this.bpmList.runId,
           stepRunId: this.bpmStepRun.stepRunId
@@ -202,7 +258,7 @@ export default {
           // 尝试使用不同的参数顺序
           try {
             console.log('尝试使用不同的参数顺序');
-            const res2 = await API.bpmForm.getHandleBpmFormDataBean.get({
+            const res2 = await API.bpm.bpmForm.getHandleBpmFormDataBean.get({
               runId: this.bpmList.runId,
               stepRunId: this.bpmStepRun.stepRunId,
               flowId: this.bpmList.flowId
@@ -250,7 +306,7 @@ export default {
     // 获取常用审批意见
     async getBpmCommIdeaList() {
       try {
-        const res = await API.bpmCommIdea.getBpmCommIdeaList.get();
+        const res = await API.bpm.bpmCommIdea.getBpmCommIdeaList.get();
         if (res.code === 200) {
           this.commIdeaTextList = res.data || [];
         }
@@ -259,28 +315,134 @@ export default {
       }
     },
     
-    // 同意
-    async handleApprove() {
-      this.bpmStepRun.passStatus = '1';
-      await this.sendBpmToNext();
+    // 从formJson中提取表单数据
+    extractFormData() {
+      const formData = {};
+      
+      // 递归遍历widgetList，提取表单数据
+      const traverseWidgets = (widgets) => {
+        if (!widgets) return;
+        
+        widgets.forEach(widget => {
+          // 处理容器类型
+          if (widget.category === 'container') {
+            if (widget.type === 'grid' && widget.cols) {
+              widget.cols.forEach(col => {
+                if (col.widgetList) {
+                  traverseWidgets(col.widgetList);
+                }
+              });
+            } else if (widget.type === 'table' && widget.rows) {
+              widget.rows.forEach(row => {
+                if (row.cols) {
+                  row.cols.forEach(col => {
+                    if (col.widgetList) {
+                      traverseWidgets(col.widgetList);
+                    }
+                  });
+                }
+              });
+            } else if (widget.widgetList) {
+              traverseWidgets(widget.widgetList);
+            }
+          } 
+          // 处理字段类型
+          else if (widget.formItemFlag !== false && widget.options) {
+            const name = widget.options.name;
+            if (name) {
+              let value = widget.options.defaultValue;
+              // 确保值的类型正确
+              if (value === undefined || value === null) {
+                value = '';
+              } else if (typeof value === 'object' && value !== null) {
+                // 确保对象类型的值能够正确序列化
+                value = JSON.parse(JSON.stringify(value));
+              }
+              formData[name] = value;
+            }
+          }
+        });
+      };
+      
+      // 开始遍历
+      if (this.formJson && this.formJson.widgetList) {
+        traverseWidgets(this.formJson.widgetList);
+      }
+      
+      return formData;
     },
     
-    // 不同意
-    async handleReject() {
-      this.bpmStepRun.passStatus = '0';
-      await this.sendBpmToNext();
+    // 保存表单数据
+    async saveFormData() {
+      try {
+        // 直接使用formData，与Vue后台保持一致
+        let formDataToSend = this.formData || {};
+        
+        // 如果formData为空，尝试从formJson中提取
+        if (Object.keys(formDataToSend).length === 0 && this.formJson) {
+          console.log('formData为空，尝试从formJson中提取');
+          formDataToSend = this.extractFormData();
+          console.log('从formJson中提取的表单数据:', formDataToSend);
+        }
+        
+        // 创建请求数据
+        const requestData = {
+          formData: JSON.stringify(formDataToSend),
+          flowId: this.bpmList.flowId || '',
+          runId: this.bpmList.runId || '',
+          flowTitle: this.bpmList.flowTitle || '',
+          urgency: this.bpmList.urgency || '',
+          stepRunId: this.bpmStepRun.stepRunId || '',
+          signBase64: this.bpmStepRun.signBase64 || '',
+          ideaText: this.bpmStepRun.ideaText || '',
+          passStatus: this.bpmStepRun.passStatus || '',
+          stepAttach: this.bpmStepRun.stepAttach || '',
+          runAttach: this.bpmList.runAttach || ''
+        };
+        
+        console.log('使用的表单数据:', formDataToSend);
+        console.log('保存表单数据请求参数:', requestData);
+        
+        // 使用API调用，设置Content-Type为application/x-www-form-urlencoded
+        const res = await API.bpm.bpmFormData.saveBpmFormData.post(requestData, {
+          header: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+          }
+        });
+        
+        if (res.code === 200) {
+          uni.showToast({ title: '保存成功', icon: 'success' });
+          return res;
+        } else {
+          uni.showToast({ title: res.message || '保存失败', icon: 'none' });
+          throw res;
+        }
+      } catch (error) {
+        console.error('保存失败:', error);
+        uni.showToast({ title: '保存失败', icon: 'none' });
+        throw error;
+      }
     },
     
     // 提交到下一步
     async sendBpmToNext() {
       try {
-        const res = await API.bpmStepRun.goNextStep.post({
-          runId: this.bpmList.runId,
-          stepRunId: this.bpmStepRun.stepRunId,
-          flowId: this.bpmList.flowId,
-          ideaText: this.bpmStepRun.ideaText,
-          passStatus: this.bpmStepRun.passStatus,
-          urgency: this.bpmList.urgency
+        // 先保存表单数据
+        await this.saveFormData();
+        
+        // 然后提交到下一步
+        // 使用API调用，设置Content-Type为application/x-www-form-urlencoded
+        const res = await API.bpm.bpmStepRun.goNextStep.post({
+          runId: this.bpmList.runId || '',
+          stepRunId: this.bpmStepRun.stepRunId || '',
+          flowId: this.bpmList.flowId || '',
+          ideaText: this.bpmStepRun.ideaText || '',
+          passStatus: this.bpmStepRun.passStatus || '',
+          urgency: this.bpmList.urgency || ''
+        }, {
+          header: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+          }
         });
         
         if (res.code === 200) {
@@ -288,12 +450,15 @@ export default {
           setTimeout(() => {
             uni.navigateBack();
           }, 1500);
+          return res;
         } else {
           uni.showToast({ title: res.message || '提交失败', icon: 'none' });
+          throw res;
         }
       } catch (error) {
         console.error('提交失败:', error);
         uni.showToast({ title: '提交失败', icon: 'none' });
+        throw error;
       }
     },
     
@@ -670,5 +835,47 @@ export default {
 
 .field-input {
   width: 100%;
+}
+
+/* 容器样式 */
+.grid-container {
+  margin: 10px 0;
+}
+
+.grid-col {
+  margin: 5px 0;
+}
+
+.table-container {
+  margin: 10px 0;
+  border: 1px solid #e8e8e8;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.table-row {
+  display: flex;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.table-row:last-child {
+  border-bottom: none;
+}
+
+.table-cell {
+  flex: 1;
+  padding: 10px;
+  border-right: 1px solid #e8e8e8;
+}
+
+.table-cell:last-child {
+  border-right: none;
+}
+
+.container-widget {
+  margin: 10px 0;
+  padding: 10px;
+  background-color: #f9f9f9;
+  border-radius: 4px;
 }
 </style>
