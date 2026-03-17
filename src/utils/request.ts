@@ -43,11 +43,28 @@ const request = <T>(config:RequestConfig):Promise<ResponseData<T>> => {
   console.log('📌 请求头:', config.header);
   console.log('🚀 ====== 请求结束 ======');
   return new Promise((resolve, reject) => {
+    // 处理POST请求的数据格式
+    let requestData = config.data;
+    const contentType = config.header['Content-Type'] || config.header['content-type'];
+    if (config.method === 'POST' && contentType === 'application/x-www-form-urlencoded' && requestData && typeof requestData === 'object') {
+      // 将对象转换为表单字符串
+      const paramsArray = [];
+      for (const key in requestData) {
+        if (requestData.hasOwnProperty(key)) {
+          const value = requestData[key];
+          if (value !== null && value !== undefined) {
+            paramsArray.push(`${encodeURIComponent(key)}=${encodeURIComponent(typeof value === 'object' ? JSON.stringify(value) : value)}`);
+          }
+        }
+      }
+      requestData = paramsArray.join('&');
+    }
+    
     uni.request({
       method: config.method || 'GET',
       timeout: config.timeout || timeout,
       url: requestUrl,
-      data: config.data,
+      data: requestData,
       header: config.header,
       dataType: 'json'
     }).then(response => {

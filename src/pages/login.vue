@@ -178,7 +178,7 @@ const isPasswordFocused = ref(false);
 const isCodeFocused = ref(false);
 const codeUrl = ref("");
 const captchaEnabled = ref(false);
-const tenantEnabled = ref(true);
+const tenantEnabled = ref(false);
 const isLoading = ref(false);
 const showPassword = ref(false);
 const rememberMe = ref(false);
@@ -403,8 +403,9 @@ function closeConfigPopup() {
 
 // 组件挂载时初始化
 onMounted(() => {
-  getCode();
-  getTenant();
+  // 暂时注释掉获取验证码和租户列表的请求
+  // getCode();
+  // getTenant();
 });
 </script>
 
@@ -665,6 +666,11 @@ page {
   letter-spacing: 1px;
   position: relative;
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  padding: 0;
 }
 
 .login-btn::before {

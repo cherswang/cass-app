@@ -116,6 +116,7 @@ export default {
       },
       // 步骤信息
       bpmStep: {
+        stepId: '',
         stepName: '',
         approval: '0',
         goBack: '0'
@@ -411,7 +412,11 @@ export default {
         });
         
         if (res.code === 200) {
-          uni.showToast({ title: '保存成功', icon: 'success' });
+          console.log('保存成功');
+          uni.showToast({ title: '提交成功', icon: 'success' });
+            setTimeout(() => {
+              uni.navigateBack();
+            }, 1500);
           return res;
         } else {
           uni.showToast({ title: res.message || '保存失败', icon: 'none' });
@@ -427,33 +432,65 @@ export default {
     // 提交到下一步
     async sendBpmToNext() {
       try {
+        console.log('开始提交到下一步');
+        console.log('当前bpmStep:', this.bpmStep);
+        console.log('当前bpmStepRun:', this.bpmStepRun);
+        console.log('当前bpmList:', this.bpmList);
+        
         // 先保存表单数据
         await this.saveFormData();
         
-        // 然后提交到下一步
-        // 使用API调用，设置Content-Type为application/x-www-form-urlencoded
-        const res = await API.bpm.bpmStepRun.goNextStep.post({
-          runId: this.bpmList.runId || '',
-          stepRunId: this.bpmStepRun.stepRunId || '',
-          flowId: this.bpmList.flowId || '',
-          ideaText: this.bpmStepRun.ideaText || '',
-          passStatus: this.bpmStepRun.passStatus || '',
-          urgency: this.bpmList.urgency || ''
-        }, {
-          header: {
-            'Content-Type': 'application/x-www-form-urlencoded'
-          }
+        // 获取下一步流程信息
+        console.log('准备获取下一步流程信息');
+        const nextStepRes = await API.bpm.bpmStepRun.getNextBpmStep.get({
+          runId: this.bpmList.runId,
+          currentStepId: this.bpmStep.stepId,
+          stepRunId: this.bpmStepRun.stepRunId
         });
         
-        if (res.code === 200) {
-          uni.showToast({ title: '提交成功', icon: 'success' });
-          setTimeout(() => {
-            uni.navigateBack();
-          }, 1500);
-          return res;
+        console.log('获取下一步流程信息响应:', nextStepRes);
+        
+        if (nextStepRes.code === 200 && nextStepRes.data && nextStepRes.data.length > 0) {
+          const nextSteps = nextStepRes.data; // 获取所有下一步步骤
+          console.log('下一步流程信息:', nextSteps);
+          
+          // 构建提交参数，与Vue后台保持一致
+          const submitParams = {
+            nextStepInfo: JSON.stringify(nextSteps),
+            runId: this.bpmList.runId || '',
+            stepRunId: this.bpmStepRun.stepRunId || '',
+            remindNextUser: '',
+            remindCreateUser: '',
+            remindParticipant: '',
+            msgContent: '',
+            autoSendUser: ''
+          };
+          
+          console.log('准备提交到下一步，参数:', submitParams);
+          
+          // 然后提交到下一步
+          // 使用API调用，设置Content-Type为application/x-www-form-urlencoded
+          const res = await API.bpm.bpmStepRun.goNextStep.post(submitParams, {
+            header: {
+              'Content-Type': 'application/x-www-form-urlencoded'
+            }
+          });
+          
+          console.log('提交到下一步响应:', res);
+          
+          if (res.code === 200) {
+            uni.showToast({ title: '提交成功', icon: 'success' });
+            setTimeout(() => {
+              uni.navigateBack();
+            }, 1500);
+            return res;
+          } else {
+            uni.showToast({ title: res.message || '提交失败', icon: 'none' });
+            throw res;
+          }
         } else {
-          uni.showToast({ title: res.message || '提交失败', icon: 'none' });
-          throw res;
+          uni.showToast({ title: '未获取到下一步流程信息', icon: 'none' });
+          throw new Error('No next step information');
         }
       } catch (error) {
         console.error('提交失败:', error);

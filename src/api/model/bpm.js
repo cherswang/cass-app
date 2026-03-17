@@ -163,6 +163,17 @@ export default {
           });
         }
       },
+      getNextBpmStep: {
+        url: `/get/bpm/getNextBpmStep`,
+        name: "获取下一步流程信息",
+        get: async function (params) {
+          return await http({
+            url: this.url,
+            method: 'GET',
+            params: params
+          });
+        }
+      },
       setIdeaText: {
         url: `/set/bpm/setIdeaText`,
         name: "审阅处理",

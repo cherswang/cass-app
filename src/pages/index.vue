@@ -53,10 +53,18 @@ export default {
             },
             {
               id: 'approval',
-              name: '审批流程',
+              name: '流程审批',
               icon: 'file-text',
               path: '/pages_approval/pages/index',
               color: '#52c41a',
+              badgeCount: 0
+            },
+            {
+              id: 'create-flow',
+              name: '发起流程',
+              icon: 'plus-circle',
+              path: '/pages_approval/pages/create/index',
+              color: '#fa8c16',
               badgeCount: 0
             }
           ]
