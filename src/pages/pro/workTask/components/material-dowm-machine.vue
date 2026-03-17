@@ -1,0 +1,1158 @@
+<template>
+  <!-- 余料下机组件 -->
+  <up-popup
+      :show="show"
+      mode="bottom"
+      :round="16"
+      :closeable="true"
+      :safe-area-inset-bottom="true"
+      :height="'100%'"
+      @close="close"
+  >
+    <view class="detail-container full-screen">
+      <!-- 标题 -->
+      <view class="detail-header">
+        <text class="detail-title">余料下机</text>
+      </view>
+
+      <!-- 内容区域 -->
+      <scroll-view class="detail-content" scroll-y>
+        <!-- 设备编码选择 -->
+        <view class="detail-section">
+          <view class="form-item">
+            <text class="form-label">设备编码</text>
+            <view class="equipment-type-selector-pretty">
+              <view class="pretty-radio-group-row">
+                <view
+                    v-for="(item, index) in equipmentOptions"
+                    :key="item.id"
+                    class="pretty-radio-item-row"
+                    :class="{'active': machineryTypeCode === item.value}"
+                    @click="selectEquipment(index)"
+                >
+                  <view class="radio-content">
+                    <text class="radio-label">{{ item.text }}</text>
+                  </view>
+                </view>
+              </view>
+              <view v-if="equipmentLoading" class="loading-container" style="margin-top: 10px;">
+                <up-loading-icon mode="spinner" color="#2979FF"></up-loading-icon>
+                <text class="loading-text">加载设备列表中...</text>
+              </view>
+              <view v-else-if="equipmentOptions.length === 0" class="empty-container" style="margin-top: 10px;">
+                <text class="empty-text">未找到可用设备编码</text>
+              </view>
+            </view>
+          </view>
+        </view>
+
+        <!-- 批次号输入 -->
+        <view class="detail-section">
+          <view class="form-item">
+            <text class="form-label">批次号</text>
+            <view class="input-wrapper">
+              <up-input
+                  v-model="batchCode"
+                  placeholder="请输入批次号"
+                  placeholder-color="#999"
+                  :clearable="true"
+                  @confirm="onBatchCodeInput"
+              ></up-input>
+            </view>
+          </view>
+        </view>
+
+        <!-- 加载状态 -->
+        <view v-if="materialLoading" class="loading-container">
+          <up-loading-icon mode="spinner" color="#2979FF"></up-loading-icon>
+          <text class="loading-text">加载物料信息中...</text>
+        </view>
+
+        <!-- 物料列表 -->
+        <view v-if="materialList.length > 0" class="detail-section">
+          <view class="batch-header">
+            <view class="section-title">已扫物料 {{ materialList.length }} 个</view>
+          </view>
+          <view class="divider"></view>
+          <view class="batch-list">
+            <view v-for="(item, index) in materialList" :key="index" class="batch-item">
+              <view class="batch-item-header">
+                <text class="batch-index">{{ index + 1 }}</text>
+                <text class="batch-code">{{ item.batchCode }}</text>
+                <up-button type="error" style="width: 90rpx;" size="mini" text="删除" @click="handleDeleteItem(index)"></up-button>
+              </view>
+              <view class="material-info">
+                <view class="material-grid">
+                  <view class="material-grid-item">
+                    <text class="material-grid-label">物料名称：</text>
+                    <text class="material-grid-value">{{ item.productName }}</text>
+                  </view>
+                  <view class="material-grid-item">
+                    <text class="material-grid-label">规格型号：</text>
+                    <text class="material-grid-value">{{ item.productSpec || '无' }}</text>
+                    <text class="material-grid-label">盘重：</text>
+                    <text class="material-grid-value">{{ item.tareWeight || '无' }} kg</text>
+                  </view>
+                  <view class="material-grid-item">
+                    <text class="material-grid-label">剩余毛重：</text>
+                    <view class="input-wrapper">
+                      <up-input
+                          v-model="item.grossWeight"
+                          type="digit"
+                          placeholder="请输入数量"
+                          @blur="validateNetWeight(index)"
+                          @input="validateNetWeight(index)"
+                      ></up-input>
+                    </view>
+                  </view>
+                  <view class="material-grid-item">
+                    <text class="material-grid-label">剩余净重：</text>
+                    <view class="input-wrapper">
+                      <view class="net-weight-display">
+                        <text class="net-weight-value">{{ item.netWeight || '0.00' }}</text>
+                      </view>
+                    </view>
+                  </view>
+                </view>
+              </view>
+            </view>
+          </view>
+        </view>
+
+        <!-- 空列表提示 -->
+        <view v-if="!materialLoading && materialList.length === 0" class="empty-state">
+          <text class="empty-text">暂无扫码物料信息</text>
+        </view>
+      </scroll-view>
+
+      <!-- 底部固定按钮 -->
+      <view class="action-section fixed-bottom">
+        <view class="button-group">
+          <up-button 
+              type="info" 
+              text="取消" 
+              @click="close"
+              style="flex: 1; margin-right: 10rpx;"
+          ></up-button>
+          <up-button 
+              type="warning" 
+              text="全部下机" 
+              @click="confirmAllMaterialDowmMachine"
+              :disabled="!!materialList.length || !machineryTypeCode || submitLoading"
+              style="flex: 1; margin-right: 10rpx;"
+          ></up-button>
+          <up-button 
+              type="primary" 
+              text="余料打标签"
+              @click="confirmMaterialDowmMachine"
+              :disabled="!materialList.length || !machineryTypeCode || submitLoading"
+              style="flex: 1;"
+          ></up-button>
+        </view>
+      </view>
+    </view>
+  </up-popup>
+
+  <!-- 打印机选择弹窗 -->
+  <up-popup
+      :show="showPrinterPopup"
+      mode="bottom"
+      :round="16"
+      :closeable="true"
+      :safe-area-inset-bottom="true"
+      :height="'60%'"
+      @close="closePrinterModal"
+  >
+    <view class="detail-container" style="min-height:40vh">
+      <!-- 标题 -->
+      <view class="detail-header">
+        <text class="detail-title">选择打印机</text>
+      </view>
+
+      <!-- 打印机列表 -->
+      <scroll-view scroll-y="true" class="printer-list-content">
+        <view v-if="printerLoading" class="loading-container">
+          <up-loading-icon mode="spinner" color="#2979FF"></up-loading-icon>
+          <text class="loading-text">加载打印机列表中...</text>
+        </view>
+        <view v-else-if="printerList.length === 0" class="empty-printers">
+          <text class="empty-text">暂无可用打印机</text>
+        </view>
+        <view v-else>
+          <view class="printer-list">
+            <view
+                v-for="printer in printerList"
+                :key="printer.id"
+                class="printer-item"
+                :class="{'active': selectedPrinter?.id === printer.id}"
+                @click="selectPrinter(printer)"
+            >
+              <text class="printer-name">{{ printer.printerName }}</text>
+              <up-icon
+                  v-if="selectedPrinter?.id === printer.id"
+                  name="checkbox-mark"
+                  size="20"
+                  color="#2979FF"
+              ></up-icon>
+            </view>
+          </view>
+        </view>
+      </scroll-view>
+
+      <!-- 底部固定按钮 -->
+      <view class="action-section fixed-bottom">
+        <view class="button-group">
+          <up-button 
+              type="info" 
+              text="取消" 
+              @click="closePrinterModal"
+              style="flex: 1; margin-right: 10rpx;"
+          ></up-button>
+          <up-button 
+              type="primary" 
+              text="确定打印" 
+              @click="confirmPrint"
+              :disabled="!selectedPrinter"
+              style="flex: 1;"
+          ></up-button>
+        </view>
+      </view>
+    </view>
+  </up-popup>
+  
+  <!-- 全部下机确认弹窗 -->
+  <up-popup
+      :show="showAllDowmMachinePopup"
+      mode="center"
+      border-radius="12rpx"
+      :closeable="false"
+  >
+    <view class="custom-modal">
+      <view class="custom-modal-header">
+        <text class="custom-modal-title">确认全部下机</text>
+      </view>
+      <view class="custom-modal-content">
+        <text class="custom-modal-text">确定要将设备编码为 {{ machineryTypeCode }} 的所有物料全部下机吗？</text>
+      </view>
+      <view class="custom-modal-footer">
+        <view style="display: flex; gap: 10rpx; width: 100%;">
+          <up-button type="info" text="取消" @click="closeAllDowmMachinePopup" style="flex: 1;"></up-button>
+          <up-button type="primary" text="确定" @click="submitAllDowmMachine" style="flex: 1;"></up-button>
+        </view>
+      </view>
+    </view>
+  </up-popup>
+</template>
+
+<script>
+import { submitMaterialIssueByStockId, getTaskIssueByTaskId,submitMaterialDowmMachine } from '@/api/pro/taskIssue'
+import { getUserProfile } from "@/api/system/user"
+import { getEquipmentListAll,batchPrint } from '@/api/pro/workTask'
+import { getPrintConfigListAll } from '@/api/system/printConfig'
+
+export default {
+  name: 'MaterialDowmMachine',
+  props: {
+    show: {
+      type: Boolean,
+      default: false
+    },
+    taskDetail: {
+      type: Object,
+      required: true
+    },
+    taskId: {
+      type: String,
+      required: true
+    }
+  },
+  data() {
+    return {
+      machineryTypeCode: '',
+      // 余料下机相关
+      batchCode: '', // 批次号
+      materialList: [], // 物料信息列表
+      materialLoading: false, // 物料信息加载状态
+      user: {},
+      equipmentOptions: [],
+      equipmentLoading: false,
+      submitLoading: false,
+      // 打印机相关
+      showPrinterPopup: false,
+      printerList: [], // 打印机列表
+      selectedPrinter: null, // 选中的打印机
+      printerLoading: false, // 打印机列表加载状态
+      // 全部下机确认弹窗
+      showAllDowmMachinePopup: false,
+      // 批次号相关
+      scannedBatchCodes: [],
+      printBatchCodes: []
+    }
+  },
+  mounted() {
+    this.getUser();
+    this.loadEquipmentList();
+  },
+  watch: {
+    taskDetail: {
+      handler(newTaskDetail) {
+        if (newTaskDetail && newTaskDetail.id) {
+          this.loadEquipmentList();
+        }
+      },
+      deep: true
+    }
+  },
+  methods: {
+    // 加载设备列表（添加去重逻辑）
+    async loadEquipmentList() {
+      this.equipmentLoading = true;
+      try {
+        const response = await getEquipmentListAll(this.taskId);
+        if (response.code === 200 && response.data) {
+          // 核心：设备编码去重处理
+          const uniqueEquipmentCodes = [...new Set(response.data)];
+
+          // 转换为选择器格式
+          this.equipmentOptions = uniqueEquipmentCodes.map((item, index) => ({
+            id: index + 1,
+            text: item || '未知设备',
+            value: item || '',
+            originalData: item
+          }));
+
+          // 只有一个设备的时候默认选中
+          if (this.equipmentOptions.length === 1) {
+            this.machineryTypeCode = this.equipmentOptions[0].value;
+          }
+
+          console.log('设备编码去重完成，原始数量：', response.data.length, '去重后数量：', this.equipmentOptions.length);
+        } else {
+          this.equipmentOptions = [];
+        }
+      } catch (error) {
+        console.error('加载设备编码失败:', error);
+        this.equipmentOptions = [];
+        uni.showToast({ title: '加载设备列表失败', icon: 'none' });
+      } finally {
+        this.equipmentLoading = false;
+      }
+    },
+
+    // 选择设备编码
+    selectEquipment(index) {
+      if (index >= 0 && index < this.equipmentOptions.length) {
+        const item = this.equipmentOptions[index];
+        if (item.value !== this.machineryTypeCode) {
+          this.clearMaterialData();
+        }
+        this.machineryTypeCode = item.value;
+      }
+    },
+
+    // 清空物料相关数据
+    clearMaterialData() {
+      this.materialList = []; // 清空物料列表
+      this.scannedBatchCodes = [];
+      this.batchCode = '';    // 清空批次号输入框
+      this.materialLoading = false; // 重置加载状态
+    },
+
+    // 关闭弹窗
+    close() {
+      this.resetForm();
+      this.$emit('close');
+    },
+
+    // 重置表单
+    resetForm() {
+      this.machineryTypeCode = '';
+      this.batchCode = '';
+      this.materialList = []; // 重置为空数组
+      this.scannedBatchCodes = [];
+      this.materialLoading = false;
+      this.submitLoading = false;
+      this.showPrinterPopup = false;
+      this.selectedPrinter = null;
+    },
+
+    // 扫码获取批次号
+    scanBatchCode() {
+      uni.scanCode({
+        success: (res) => {
+          this.batchCode = res.result;
+          this.onBatchCodeInput();
+          uni.showToast({
+            title: '扫码成功',
+            icon: 'success',
+            duration: 500
+          });
+        },
+        fail: (err) => {
+          console.error('扫码失败:', err);
+          uni.showToast({
+            title: '扫码失败，请重试',
+            icon: 'none',
+            duration: 1000
+          });
+        }
+      });
+    },
+
+    async getUser() {
+      try {
+        const response = await getUserProfile();
+        const data = response.data;
+        this.user = data.user;
+        this.roleGroup = data.roleGroup;
+        this.postGroup = data.postGroup;
+      } catch (error) {
+        console.error('获取用户信息失败:', error);
+      }
+    },
+
+    async onBatchCodeInput() {
+      await this.getUser();
+      if (!this.batchCode || this.batchCode.length < 5) {
+        return;
+      }
+      if (!this.machineryTypeCode || this.machineryTypeCode.trim() === '') {
+        uni.showToast({
+          title: '请先选择设备编码',
+          icon: 'none'
+        });
+        return;
+      }
+      this.materialLoading = true;
+      try {
+        const params = {
+          batchCode: this.batchCode,
+          machineryTypeCode: this.machineryTypeCode,
+          taskId: this.taskId,
+          feedingStatus: 0
+        };
+        const res = await getTaskIssueByTaskId(params);
+        if (res.code === 200) {
+          const data = res.rows[0];
+          if (!data) {
+            uni.showToast({
+              title: '未获取到物料信息',
+              icon: 'none'
+            });
+          } else {
+            if (data.warehouseCode === 'XBK_VIRTUAL' || data.warehouseCode === 'YLK_VIRTUAL') {
+              const batchCodeToCheck = this.batchCode.trim().toLowerCase();
+              const isDuplicate = this.materialList.some(item =>
+                  item.batchCode && item.batchCode.trim().toLowerCase() === batchCodeToCheck
+              );
+
+              if (isDuplicate) {
+                uni.showToast({
+                  title: '该批次号物料已扫码',
+                  icon: 'none'
+                });
+                return;
+              }
+              this.materialList.push(data);
+              this.scannedBatchCodes.push(this.batchCode.trim());
+              this.batchCode = '';
+            } else {
+              uni.showToast({
+                title: '物料仓库存在问题，请重新扫码！',
+                icon: 'none'
+              });
+              return;
+            }
+          }
+        } else {
+          uni.showToast({
+            title: res.msg || '获取物料信息失败',
+            icon: 'none'
+          });
+        }
+      } catch (error) {
+        console.error('获取物料信息失败:', error);
+        uni.showToast({
+          title: '网络错误，请重试',
+          icon: 'none'
+        });
+      } finally {
+        this.materialLoading = false;
+      }
+    },
+
+    validateNetWeight(index) {
+      const item = this.materialList[index];
+      // 自动计算净重：毛重减去盘重
+      const grossWeight = parseFloat(item.grossWeight) || 0;
+      const tareWeight = parseFloat(item.tareWeight) || 0;
+      item.netWeight = (grossWeight - tareWeight).toFixed(2);
+      
+      // 验证净重是否为非负数
+      if (isNaN(parseFloat(item.netWeight)) || parseFloat(item.netWeight) < 0) {
+        uni.showToast({
+          title: '剩余数量必须为非负数',
+          icon: 'none'
+        });
+        item.netWeight = '0.00';
+      }
+      if (!item.originalNetWeight) {
+        item.originalNetWeight = item.netWeight;
+      }
+    },
+
+    handleDeleteItem(index) {
+      uni.showModal({
+        title: '删除确认',
+        content: '确定要删除该物料信息吗？',
+        success: (res) => {
+          if (res.confirm) {
+            const deletedBatchCode = this.materialList[index].batchCode;
+            this.scannedBatchCodes = this.scannedBatchCodes.filter(code => code !== deletedBatchCode);
+            this.printBatchCodes = this.printBatchCodes.filter(code => code !== deletedBatchCode);
+            this.materialList.splice(index, 1);
+            uni.showToast({
+              title: '删除成功',
+              icon: 'success',
+              duration: 800
+            });
+          }
+        }
+      });
+    },
+
+    async confirmAllMaterialDowmMachine() {
+      if (!this.machineryTypeCode || this.machineryTypeCode.trim() === '') {
+        uni.showToast({
+          title: '请选择设备编码',
+          icon: 'none',
+          duration: 1000
+        });
+        return;
+      }
+
+      this.showAllDowmMachinePopup = true;
+    },
+    
+    // 关闭全部下机确认弹窗
+    closeAllDowmMachinePopup() {
+      this.showAllDowmMachinePopup = false;
+    },
+    
+    // 提交全部下机
+    async submitAllDowmMachine() {
+      this.showAllDowmMachinePopup = false;
+      this.submitLoading = true;
+      try {
+        const res = await submitMaterialDowmMachine({
+          machineryTypeCode: this.machineryTypeCode, // 设备编码（整体参数）
+          userId: this.user.userId, // 用户ID（整体参数）
+          taskId: this.taskId, // 任务ID（整体参数）
+          materialList: [] // 空物料集合，表示全部下机
+        });
+
+        // 检查提交结果
+        if (res.code === 200) {
+          uni.showToast({
+            title: '全部下机成功',
+            icon: 'success'
+          });
+          this.close();
+          this.$emit('material-picked', {
+            machineryTypeCode: this.machineryTypeCode,
+            materialList: []
+          });
+        } else {
+          uni.showToast({
+            title: res.msg || '全部下机失败',
+            icon: 'none'
+          });
+        }
+      } catch (error) {
+        console.error('全部下机失败:', error);
+        uni.showToast({
+          title: error.message || '全部下机失败，请重试',
+          icon: 'none'
+        });
+      } finally {
+        this.submitLoading = false;
+      }
+    },
+
+    async confirmMaterialDowmMachine() {
+      if (!this.machineryTypeCode || this.machineryTypeCode.trim() === '') {
+        uni.showToast({
+          title: '请选择设备编码',
+          icon: 'none',
+          duration: 1000
+        });
+        return;
+      }
+      if (this.materialList.length === 0) {
+        uni.showToast({
+          title: '请先扫码添加物料',
+          icon: 'none'
+        });
+        return;
+      }
+
+      for (let i = 0; i < this.materialList.length; i++) {
+        const item = this.materialList[i];
+        if (isNaN(item.netWeight) || item.netWeight < 0) {
+          uni.showToast({
+            title: `第${i+1}个物料剩余数量输入有误`,
+            icon: 'none'
+          });
+          return;
+        }
+
+        // 验证仓库信息
+        if (item.warehouseCode !== 'XBK_VIRTUAL' && item.warehouseCode !== 'YLK_VIRTUAL') {
+          uni.showToast({
+            title: `第${i+1}个物料仓库信息异常`,
+            icon: 'none'
+          });
+          return;
+        }
+      }
+
+      this.submitLoading = true;
+      try {
+        const materialBatchList = this.materialList.map(item => ({
+          taskId: this.taskId,  //任务id
+          materialStockId: item.materialStockId, //投料id
+          machineryTypeCode: this.machineryTypeCode, //设备编号
+          netWeight: item.netWeight, //净重
+          batchCode: item.batchCode, //批次号
+        }));
+
+        const res = await submitMaterialDowmMachine({
+          machineryTypeCode: this.machineryTypeCode, // 设备编码（整体参数）
+          userId: this.user.userId, // 用户ID（整体参数）
+          taskId: this.taskId, // 任务ID（整体参数）
+          materialList: materialBatchList // 物料集合
+        });
+
+        // 检查提交结果
+        if (res.code === 200) {
+          uni.showToast({
+            title: '下机成功',
+            icon: 'success'
+          });
+          this.printBatchCodes = [...this.scannedBatchCodes];
+          this.openPrinterModal();
+          this.$emit('material-picked', {
+            machineryTypeCode: this.machineryTypeCode,
+            materialList: this.materialList
+          });
+        } else {
+          uni.showToast({
+            title: res.msg || '下机失败',
+            icon: 'none'
+          });
+        }
+      } catch (error) {
+        console.error('下机失败:', error);
+        uni.showToast({
+          title: error.message || '下机失败，请重试',
+          icon: 'none'
+        });
+      } finally {
+        this.submitLoading = false;
+      }
+    },
+
+    // 打开打印机选择弹窗
+    openPrinterModal() {
+      if (this.printBatchCodes.length === 0) {
+        uni.showToast({
+          title: '暂无可打印的批次号',
+          icon: 'none',
+          duration: 2000
+        });
+        return;
+      }
+      this.showPrinterPopup = true;
+      this.loadPrinterList();
+    },
+
+    // 关闭打印机选择弹窗
+    closePrinterModal() {
+      this.showPrinterPopup = false;
+      this.selectedPrinter = null; // 重置选中的打印机
+    },
+
+    // 加载打印机列表
+    async loadPrinterList() {
+      this.printerLoading = true;
+      try {
+        const result = await getPrintConfigListAll();
+        if (result.code === 200 && result.data) {
+          this.printerList = result.data;
+          if (this.printerList.length > 0) {
+            this.selectedPrinter = this.printerList[0];
+          }
+        } else {
+          this.printerList = [];
+        }
+      } catch (error) {
+        console.error('加载打印机列表失败:', error);
+        this.printerList = [];
+        uni.showToast({
+          title: '加载打印机列表失败',
+          icon: 'none',
+          duration: 2000
+        });
+      } finally {
+        this.printerLoading = false;
+      }
+    },
+
+    // 选择打印机
+    selectPrinter(printer) {
+      this.selectedPrinter = printer;
+    },
+
+    // 确认打印
+    async confirmPrint() {
+      if (!this.selectedPrinter) {
+        uni.showToast({
+          title: '请选择打印机',
+          icon: 'none',
+          duration: 1000
+        });
+        return;
+      }
+
+      // 检查缓存的打印批次号
+      if (this.printBatchCodes.length === 0) {
+        uni.showToast({
+          title: '暂无可打印的批次号',
+          icon: 'none',
+          duration: 2000
+        });
+        return;
+      }
+
+      uni.showLoading({
+        title: '标签打印中...'
+      });
+
+      try {
+        const result = await batchPrint({
+          printerId: this.selectedPrinter.id,// 传递选中的打印机ID
+          materialDowmMachine : 'materialDowmMachine',
+          batchCodes: this.printBatchCodes,
+        });
+
+        uni.hideLoading();
+        uni.showToast({
+          title: result.msg || '标签打印成功',
+          icon: 'success',
+          duration: 2000
+        });
+
+        // 关闭打印机选择弹窗
+        this.closePrinterModal();
+        // 打印完成后清空缓存（避免重复打印）
+        this.printBatchCodes = [];
+        // 关闭主弹窗
+        this.close();
+      } catch (error) {
+        uni.hideLoading();
+        console.error('打印失败:', error);
+        uni.showToast({
+          title: error.message || '标签打印失败',
+          icon: 'none',
+          duration: 2000
+        });
+      }
+    },
+  }
+}
+</script>
+
+<style lang="scss" scoped>
+/* 弹窗样式 */
+.detail-container {
+  background: #fff;
+  min-height: 70vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.detail-container .full-screen {
+  height: 100%;
+  max-height: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.detail-header {
+  padding: 30rpx 30rpx 20rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+  text-align: center;
+}
+
+.detail-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+}
+
+.detail-content {
+  flex: 1;
+  padding: 0 30rpx;
+  max-height: none;
+}
+
+.detail-section {
+  margin: 30rpx 0;
+}
+
+/* 表单项目样式 */
+.form-item {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  margin-bottom: 20rpx;
+}
+
+.form-label {
+  font-size: 14px;
+  color: #666;
+  font-weight: 500;
+  width: 100rpx;
+  flex-shrink: 0;
+}
+
+.input-wrapper {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.input-wrapper :deep(.u-input) {
+  flex: 1;
+}
+
+/* 净重显示样式 */
+.net-weight-display {
+  flex: 1;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  background-color: #f5f7fa;
+  border-radius: 4px;
+  border: 0.5px solid #e8e8e8;
+}
+
+.net-weight-value {
+  font-size: 14px;
+  color: #333;
+  font-weight: 500;
+}
+
+/* 加载状态样式 */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40rpx 0;
+  margin-top: 30rpx;
+}
+
+.loading-text {
+  font-size: 14px;
+  color: #999;
+  margin-top: 20rpx;
+}
+
+/* 操作按钮区域 */
+.action-section {
+  padding: 30rpx;
+  margin-top: 20rpx;
+}
+
+.action-section.fixed-bottom {
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: #fff;
+  border-top: 1rpx solid #f0f0f0;
+  margin-top: 0;
+  padding: 20rpx 30rpx;
+  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
+  z-index: 10;
+}
+
+.button-group {
+  display: flex;
+  gap: 10rpx;
+}
+
+/* 批次号列表样式 */
+.batch-list {
+  margin-top: 10rpx;
+  border-radius: 8rpx;
+  padding: 5rpx;
+  max-height: 950rpx;
+  overflow-y: auto;
+}
+
+.batch-list::-webkit-scrollbar {
+  width: 4rpx;
+}
+
+.batch-list::-webkit-scrollbar-thumb {
+  background-color: #c1c1c1;
+  border-radius: 2rpx;
+}
+
+.batch-item {
+  background-color: #fff;
+  border-radius: 6rpx;
+  padding: 15rpx;
+  margin-bottom: 6rpx;
+  box-shadow: 0 1rpx 4rpx rgba(0, 0, 0, 0.18);
+  transition: all 0.2s ease;
+}
+
+.batch-item:hover {
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.12);
+}
+
+.batch-item-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 6rpx;
+  padding-bottom: 6rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.batch-index {
+  font-size: 12px;
+  color: #666;
+  margin-right: 8rpx;
+  min-width: 25rpx;
+  background-color: #f0f0f0;
+  border-radius: 4rpx;
+  padding: 2rpx 6rpx;
+  text-align: center;
+}
+
+.batch-code {
+  font-size: 14px;
+  font-weight: bold;
+  color: #333;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 物料信息样式 */
+.material-info {
+  margin-top: 6rpx;
+  background-color: transparent;
+  padding: 0;
+}
+
+.material-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.material-grid-item {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.material-grid-label {
+  font-size: 14px;
+  color: #666;
+  font-weight: 500;
+  min-width: 70rpx;
+}
+
+.material-grid-value {
+  font-size: 14px;
+  color: #333;
+  flex: 1;
+  word-break: break-all;
+  line-height: 1.3;
+}
+
+/* 批次号列表头部 */
+.batch-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12rpx;
+  padding-left: 20rpx;
+  padding-right: 20rpx;
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.section-subtitle {
+  font-size: 14px;
+  color: #666;
+  font-weight: 500;
+}
+
+.divider {
+  height: 1rpx;
+  background-color: #f0f0f0;
+  margin-bottom: 12rpx;
+}
+
+/* 空状态样式 */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 100rpx 0;
+}
+
+.empty-text {
+  font-size: 14px;
+  color: #999;
+}
+
+/* 设备编码选择器样式 */
+.equipment-type-selector-pretty {
+  flex: 1;
+}
+
+.pretty-radio-group-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.pretty-radio-item-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7.5px 12.5px;
+  border: 0.5px solid #e8e8e8;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s;
+  flex: 1;
+  min-width: 120px;
+  justify-content: center;
+}
+
+.pretty-radio-item-row.active {
+  border-color: #2979FF;
+  background-color: #f0f8ff;
+}
+
+.radio-content {
+  display: flex;
+  align-items: center;
+}
+
+.radio-label {
+  font-size: 13px;
+}
+
+/* 打印机列表区域 */
+.printer-list-content {
+  flex: 1;
+  max-height: 500rpx;
+  padding: 5px 0;
+}
+
+/* 打印机列表样式 */
+.printer-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 30rpx;
+}
+
+.printer-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24rpx 0;
+  border-bottom: 1rpx solid #f0f0f0;
+  transition: all 0.3s ease;
+}
+
+.printer-item:last-child {
+  border-bottom: none;
+}
+
+.printer-item.active {
+  background-color: #f0f8ff;
+}
+
+.printer-name {
+  font-size: 16px;
+  color: #333;
+  flex: 1;
+  text-align: left;
+}
+
+/* 空状态样式 */
+.empty-printers {
+  text-align: center;
+  padding: 40rpx 0;
+  color: #999;
+  font-size: 14px;
+}
+
+/* 自定义模态框样式 */
+.custom-modal {
+  width: 480rpx;
+  background-color: #fff;
+  border-radius: 12rpx;
+  overflow: hidden;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.15);
+}
+
+.custom-modal-header {
+  padding: 30rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+  text-align: center;
+}
+
+.custom-modal-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.custom-modal-content {
+  padding: 40rpx 30rpx;
+  min-height: 120rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.custom-modal-text {
+  font-size: 14px;
+  color: #666;
+  line-height: 24rpx;
+  text-align: center;
+}
+
+.custom-modal-footer {
+  padding: 0 30rpx 30rpx;
+}
+</style>

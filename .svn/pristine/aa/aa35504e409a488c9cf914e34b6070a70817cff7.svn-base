@@ -1,0 +1,71 @@
+import request from '@/utils/request'
+
+// 加密配置缓存
+const configCache = {
+  publicKey: null,
+  encryptionType: 'SM2',
+  lastUpdated: null
+}
+
+// 从后端获取加密配置
+export const fetchEncryptionConfig = async (force = false) => {
+  // 如果配置仍然有效且不强制刷新，直接返回
+  if (!force && isConfigValid()) return configCache
+
+  try {
+    const response = await request({
+      url: '/capi/get/system/getEncryptionConfig',
+      method: 'get',
+      headers: {
+        isToken: false,
+        isEncrypt: false  // 获取加密配置时不需要加密
+      }
+    })
+
+    const data = response.data || response
+    console.log('6666', data)
+    if (data.publicKey) {
+      configCache.publicKey = data.publicKey
+      // 数字映射：1=SM2，0=RSA
+      configCache.encryptionType =
+        data.encryptionType === '1' ? 'SM2' :
+        data.encryptionType === '0' ? 'RSA' :
+        'SM2'  // 默认值
+      configCache.lastUpdated = Date.now()
+
+      console.log('加密配置已更新:', {
+        encryptionType: configCache.encryptionType,
+        publicKey: configCache.publicKey.slice(0, 10) + '...' // 简略显示
+      })
+      return configCache
+    }
+
+    console.warn('未从后端获取到有效的加密配置')
+    return configCache
+  } catch (error) {
+    console.error('获取加密配置失败:', error)
+    return configCache
+  }
+}
+
+// 获取当前加密配置
+export const getEncryptionConfig = () => {
+  return configCache
+}
+
+// 检查配置是否有效（24小时内）
+export const isConfigValid = () => {
+  return configCache.publicKey &&
+         configCache.lastUpdated &&
+         (Date.now() - configCache.lastUpdated < 24 * 60 * 60 * 1000)
+}
+
+// 手动更新配置（可选）
+export const updateEncryptionConfig = (config) => {
+  if (config.publicKey) {
+    configCache.publicKey = config.publicKey
+    configCache.encryptionType = config.encryptionType || 'SM2'
+    configCache.lastUpdated = Date.now()
+  }
+  return configCache
+}

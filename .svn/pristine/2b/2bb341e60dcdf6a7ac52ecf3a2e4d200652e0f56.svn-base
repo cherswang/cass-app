@@ -1,0 +1,311 @@
+<template>
+  <view class="workshop-home">
+    <!-- 加载动画 -->
+    <view v-if="loading" class="loading-container">
+      <view class="loading-spinner"></view>
+      <text class="loading-text">加载中...</text>
+    </view>
+
+    <!-- 应用中心 -->
+    <view v-else class="apps-center">
+      <!-- 动态渲染应用分类 -->
+      <view class="app-category-card" v-for="category in appCategories" :key="category.id">
+        <view class="category-header">
+          <text class="category-title">{{ category.name }}</text>
+        </view>
+        <view class="apps-grid" :class="getGridClass(category)">
+          <view class="app-item" v-for="app in category.children" :key="app.id" @click="openApp(app)">
+            <view class="app-icon-wrapper">
+              <view class="app-icon" :style="{ background: app.color }">
+                <up-icon :name="app.icon" size="40" color="#fff"></up-icon>
+              </view>
+              <!-- 应用右上角角标 -->
+              <text v-if="app.badgeCount" class="app-badge">{{ app.badgeCount }}</text>
+            </view>
+            <text class="app-name">{{ app.name }}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+</template>
+
+<script>
+import { getAppRouters } from "@/api/system/appMenu"
+
+export default {
+  data() {
+    return {
+      appCategories: [],
+      loading: true
+    }
+  },
+
+  mounted() {
+    // this.fetchAppRouters();
+  },
+
+  methods: {
+    // 获取应用菜单数据 - 保持您原有的逻辑
+    async fetchAppRouters() {
+      this.loading = true;
+      try {
+        const response = await getAppRouters();
+        const menuData = response.data;
+        if (!menuData || !Array.isArray(menuData)) {
+          this.showToast('暂无应用数据');
+          return;
+        }
+
+        const processedCategories = menuData.map(category => {
+          // 过滤隐藏的分类
+          if (category.hidden === '1' || category.status === '0') {
+            return null;
+          }
+          // 过滤隐藏的子应用
+          const filteredChildren = (category.children || []).filter(app => {
+            return app.hidden !== '1' && app.status !== '0';
+          }).map(app => ({
+            id: app.id,
+            name: app.name,
+            icon: app.icon || 'list',
+            path: app.path,
+            color: this.getCategoryColor(category.name),
+            badgeCount: app.badgeCount
+          }));
+
+          return {
+            id: category.id,
+            name: category.name,
+            icon: category.icon || 'list',
+            color: this.getCategoryColor(category.name),
+            children: filteredChildren
+          };
+        }).filter(category => category !== null && category.children.length > 0);
+
+        this.appCategories = processedCategories;
+
+        if (this.appCategories.length === 0) {
+          this.showToast('暂无应用数据');
+        }
+      } catch (error) {
+        console.error('获取应用菜单失败:', error);
+        this.showToast('获取菜单失败');
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    // 根据分类名称获取颜色
+    getCategoryColor(categoryName) {
+      const colorMap = {
+        '生产应用': '#1890ff',
+        '质量应用': '#52c41a',
+        '设备应用': '#fa8c16',
+        '仓储应用': '#fa541c'
+      };
+      return colorMap[categoryName] || '#1890ff';
+    },
+
+    // 根据分类获取网格样式类
+    getGridClass(category) {
+      const name = category.name;
+      if (name === '推荐应用') {
+        return 'grid-3';
+      } else if (name === '实用工具' && category.children.length <= 1) {
+        return 'grid-1';
+      } else {
+        return 'grid-5';
+      }
+    },
+
+    // 打开应用
+    openApp(app) {
+      if (!app.path) {
+        this.showToast('功能开发中');
+        return;
+      }
+
+      uni.navigateTo({
+        url: app.path,
+        fail: () => {
+          this.showToast('页面不存在');
+        }
+      });
+    },
+
+    // 显示提示
+    showToast(title) {
+      uni.showToast({
+        title,
+        icon: 'none',
+        duration: 1500
+      });
+    }
+  }
+}
+</script>
+
+<style lang="scss">
+
+/* 加载动画容器 */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 60vh;
+  gap: 10px;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(24, 144, 255, 0.2);
+  border-top: 4px solid #1890ff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-text {
+  font-size: 14px;
+  color: #606266;
+  font-weight: 500;
+}
+
+.workshop-home {
+  padding: 15px 12px;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+.apps-center {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+/* 页面标题 */
+.page-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #262626;
+  text-align: center;
+  margin-bottom: 10px;
+  padding: 8px 0;
+}
+
+.app-category-card {
+  background: white;
+  border-radius: 12px;
+  padding: 15px 12px;
+}
+
+.category-header {
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  //border-bottom: 1px solid #f5f5f5;
+}
+
+.category-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #262626;
+}
+
+/* 默认5列网格 */
+.apps-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px 8px;
+}
+
+/* 3列网格（用于推荐应用） */
+.apps-grid.grid-3 {
+  grid-template-columns: repeat(3, 1fr);
+  justify-items: center;
+}
+
+/* 1列网格（用于实用工具） */
+.apps-grid.grid-1 {
+  grid-template-columns: 1fr;
+  justify-items: center;
+}
+
+.app-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 4px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  min-height: 65px;
+  justify-content: center;
+}
+
+.app-item:active {
+  background: #f0f7ff;
+  transform: scale(0.98);
+}
+
+.app-icon-wrapper {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.app-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.app-name {
+  font-size: 13px;
+  color: #5a5a5a;
+  text-align: center;
+  line-height: 14px;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.app-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #f5222d;
+  color: white;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 8px;
+  min-width: 16px;
+  height: 16px;
+  text-align: center;
+  line-height: 14px;
+  border: 1px solid white;
+  box-shadow: 0 1px 3px rgba(245, 34, 45, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 30px;
+}
+</style>

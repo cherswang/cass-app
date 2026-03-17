@@ -1,0 +1,690 @@
+{
+  "easycom": {
+    "custom": {
+      "^u--(.*)": "uview-plus/components/u-$1/u-$1.vue",
+      "^up-(.*)": "uview-plus/components/u-$1/u-$1.vue",
+      "^u-([^-].*)": "uview-plus/components/u-$1/u-$1.vue",
+      "qiun-(.*)": "@/components/qiun-data-charts/components/qiun-$1/qiun-$1.vue",
+      "geek-(.*)": "@/components/geek-xd/components/geek-$1/geek-$1.vue",
+      "gx-(.*)": "@/components/geek-xd/components/geek-$1/geek-$1.vue"
+    }
+  },
+  "pages": [
+    {
+      "path": "pages/login",
+      "style": {
+        "navigationBarTitleText": "登录"
+      }
+    },
+    {
+      "path": "pages/print",
+      "style": {
+        "navigationBarTitleText": "打印"
+      }
+    },
+    {
+      "path": "pages/index",
+      "style": {
+        "navigationBarTitleText": "应用中心"
+      }
+    },
+    {
+      "path": "pages/mine",
+      "style": {
+        "navigationBarTitleText": "我的"
+      }
+    },
+    {
+      "path": "pages/common/webview/index",
+      "style": {
+        "navigationBarTitleText": "浏览网页"
+      }
+    },
+    {
+      "path": "pages/common/textview/index",
+      "style": {
+        "navigationBarTitleText": "浏览文本"
+      }
+    },
+    {
+    	"path" : "pages/common/detail",
+    	"style" : 
+    	{
+    		"navigationBarTitleText" : ""
+    	}
+    },
+    {
+      "path": "pages/md/item/sing-select",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/md/item/save",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    }
+  ],
+  "subPackages": [
+    {
+      "root": "pages_checkin/pages",
+      "pages": [
+        {
+          "path": "index",
+          "style": {
+            "navigationBarTitleText": "打卡"
+          }
+        },
+        {
+          "path": "record/index",
+          "style": {
+            "navigationBarTitleText": "打卡记录"
+          }
+        },
+        {
+          "path": "settings/index",
+          "style": {
+            "navigationBarTitleText": "打卡设置"
+          }
+        }
+      ]
+    },
+    {
+      "root": "pages_approval/pages",
+      "pages": [
+        {
+          "path": "index",
+          "style": {
+            "navigationBarTitleText": "审批"
+          }
+        },
+        {
+          "path": "list/pending",
+          "style": {
+            "navigationBarTitleText": "待审批"
+          }
+        },
+        {
+          "path": "list/processed",
+          "style": {
+            "navigationBarTitleText": "已处理"
+          }
+        },
+        {
+          "path": "list/mine",
+          "style": {
+            "navigationBarTitleText": "我的审批"
+          }
+        },
+        {
+          "path": "detail/index",
+          "style": {
+            "navigationBarTitleText": "审批详情"
+          }
+        },
+        {
+          "path": "handle/index",
+          "style": {
+            "navigationBarTitleText": "流程办理"
+          }
+        }
+      ]
+    },
+    {
+      "root": "pages_mine/pages",
+      "pages": [
+        {
+          "path": "avatar/index",
+          "style": {
+            "navigationBarTitleText": "修改头像"
+          }
+        },
+        {
+          "path": "info/index",
+          "style": {
+            "navigationBarTitleText": "个人信息"
+          }
+        },
+        {
+          "path": "info/edit",
+          "style": {
+            "navigationBarTitleText": "编辑资料"
+          }
+        },
+        {
+          "path": "pwd/index",
+          "style": {
+            "navigationBarTitleText": "修改密码"
+          }
+        },
+        {
+          "path": "setting/index",
+          "style": {
+            "navigationBarTitleText": "应用设置"
+          }
+        },
+        {
+          "path": "help/index",
+          "style": {
+            "navigationBarTitleText": "常见问题"
+          }
+        },
+        {
+          "path": "about/index",
+          "style": {
+            "navigationBarTitleText": "关于我们"
+          }
+        }
+      ]
+    },
+    {
+      "root": "pages_template/pages",
+      "pages": [
+        {
+          "path": "wxCenter/index",
+          "style": {
+            "navigationBarTitleText": "wxCenter 仿微信个人中心",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "keyboardPay/index",
+          "style": {
+            "navigationBarTitleText": "keyboardPay 自定义键盘支付"
+          }
+        },
+        {
+          "path": "mallMenu/index2",
+          "style": {
+            "navigationBarTitleText": "mallMenu-商城分类"
+          }
+        },
+        {
+          "path": "mallMenu/index1",
+          "style": {
+            "navigationBarTitleText": "mallMenu-商城分类"
+          }
+        },
+        {
+          "path": "coupon/index",
+          "style": {
+            "navigationBarTitleText": "coupon-优惠券"
+          }
+        },
+        {
+          "path": "login/index1",
+          "style": {
+            "navigationBarTitleText": "美团登录"
+          }
+        },
+        {
+          "path": "login/index2",
+          "style": {
+            "navigationBarTitleText": "水滴登录"
+          }
+        },
+        {
+          "path": "citySelect/index",
+          "style": {
+            "navigationBarTitleText": "城市选择"
+          }
+        },
+        {
+          "path": "submitBar/index",
+          "style": {
+            "navigationBarTitleText": "提交订单栏"
+          }
+        },
+        {
+          "path": "comment/index",
+          "style": {
+            "navigationBarTitleText": "评论"
+          }
+        },
+        {
+          "path": "comment/reply",
+          "style": {
+            "navigationBarTitleText": "评论详情"
+          }
+        },
+        {
+          "path": "order/index",
+          "style": {
+            "navigationBarTitleText": "订单"
+          }
+        },
+        {
+          "path": "login/code",
+          "style": {
+            "navigationBarTitleText": "登录获取验证码"
+          }
+        },
+        {
+          "path": "address/index",
+          "style": {
+            "navigationBarTitleText": "用户地址"
+          }
+        },
+        {
+          "path": "address/addSite",
+          "style": {
+            "navigationBarTitleText": "添加用户地址"
+          }
+        }
+      ]
+    },
+    {
+      "root": "pages_qiun/pages",
+      "pages": [
+        {
+          "path": "sport/index",
+          "style": {
+            "pageOrientation": "auto"
+          }
+        },
+        {
+          "path": "school/index",
+          "style": {
+            "pageOrientation": "auto"
+          }
+        },
+        {
+          "path": "finance/index",
+          "style": {
+            "pageOrientation": "auto"
+          }
+        },
+        {
+          "path": "main/index",
+          "style": {
+            "pageOrientation": "auto"
+          }
+        }
+      ]
+    },
+    {
+      "root": "pages_geek/pages",
+      "pages": [
+        {
+          "path": "index/index"
+        },
+        {
+          "path": "code/index"
+        }
+      ]
+    },
+    {
+      "root": "pages/quality",
+      "pages": [
+        {
+          "path": "qcIpqc/index",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "qcIpqc/detail",
+          "style": {
+            "navigationBarTitleText": "过程检验详情"
+          }
+        },
+        {
+          "path": "qcIpqc/ipqcSaveDialog",
+          "style": {
+            "navigationBarTitleText": "过程检验单"
+          }
+        },
+        {
+          "path": "qcIpqc/single",
+          "style": {
+            "navigationBarTitleText": "选择检验方案"
+          }
+        },
+        {
+          "path": "qcIqc/index",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "qcIqc/iqcSaveDialog",
+          "style": {
+            "navigationBarTitleText": "来料检验单"
+          }
+        },
+        {
+          "path": "qcIqc/detail",
+          "style": {
+            "navigationBarTitleText": "料检验单详情"
+          }
+        },
+        {
+          "path": "qcOpqc/index",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "qcOpqc/opqcSaveDialog",
+          "style": {
+            "navigationBarTitleText": "委外检验单"
+          }
+        },
+        {
+          "path": "qcOpqc/detail",
+          "style": {
+            "navigationBarTitleText": "委外检验详情"
+          }
+        },
+        {
+          "path": "testData/index",
+          "style": {
+            "navigationBarTitleText": "检测记录"
+          }
+        }
+      ]
+    },
+    {
+      "root": "pages/pro",
+      "pages": [
+        {
+          "path": "workTask/index",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "workTask/detail",
+          "style": {
+            "navigationBarTitleText": "任务详情"
+          }
+        },
+        {
+          "path": "workTask/myTask",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "workTask/taskReport",
+          "style": {
+            "navigationBarTitleText": "报工记录"
+          }
+        },
+        {
+          "path": "workTask/issueRecord",
+          "style": {
+            "navigationBarTitleText": "领料记录"
+          }
+        },
+        {
+          "path": "workTask/myTaskWork",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        }
+      ]
+    },
+    {
+      "root": "pages/wms",
+      "pages": [
+        {
+          "path": "materialPut/index",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "productIssue/index",
+          "style": {
+            "navigationBarTitleText": "仓库领料"
+          }
+        },
+        {
+          "path": "materialPut/detail",
+          "style": {
+            "navigationBarTitleText": "来料入库详情"
+          }
+        },
+        {
+          "path": "materialPut/vendor",
+          "style": {
+            "navigationBarTitleText": "选择供应商"
+          }
+        },
+        {
+          "path": "materialPut/single",
+          "style": {
+            "navigationBarTitleText": "选择物料"
+          }
+        },
+        {
+          "path": "materialPut/save",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        }
+      ]
+    },
+    {
+      "root": "pages/wms",
+      "pages": [
+        {
+          "path": "productPut/index",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },{
+          "path": "productPut/save",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "productPut/detail",
+          "style": {
+            "navigationBarTitleText": "产品入库详情"
+          }
+        }
+      ]
+    },
+    {
+      "root": "pages/wms",
+      "pages": [
+        {
+          "path": "productOut/index",
+          "style": {
+            "navigationBarTitleText": "生产领料"
+          }
+        },
+        {
+          "path": "productOut/detail",
+          "style": {
+            "navigationBarTitleText": "物料入库详情"
+          }
+        }
+      ]
+    },
+    {
+      "root": "pages/wms",
+      "pages": [
+        {
+          "path": "productRet/index",
+          "style": {
+            "navigationBarTitleText": "生产退料"
+          }
+        },
+        {
+          "path": "productRet/detail",
+          "style": {
+            "navigationBarTitleText": "物料入库详情"
+          }
+        }
+      ]
+    },
+    {
+      "root": "pages/wms",
+      "pages": [
+        {
+          "path": "transfer/index",
+          "style": {
+            "navigationBarTitleText": "转移调拨单"
+          }
+        },
+        {
+          "path": "transfer/detail",
+          "style": {
+            "navigationBarTitleText": "转移调拨单详情"
+          }
+        }
+      ]
+    },
+    {
+      "root": "pages/wms",
+      "pages": [
+        {
+          "path": "productSalse/index",
+          "style": {
+            "navigationBarTitleText": "销售出库单"
+          }
+        },
+        {
+          "path": "productSalse/detail",
+          "style": {
+            "navigationBarTitleText": "销售出库单详情"
+          }
+        }
+      ]
+    },
+    {
+      "root": "pages/wms",
+      "pages": [
+        {
+          "path": "rtSalse/index",
+          "style": {
+            "navigationBarTitleText": "销售退货单"
+          }
+        },
+        {
+          "path": "rtSalse/detail",
+          "style": {
+            "navigationBarTitleText": "销售退货单详情"
+          }
+        }
+      ]
+    },{
+      "root": "pages/wms",
+      "pages": [
+        {
+          "path": "stocktaking/index",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },{
+          "path": "stocktaking/save",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        }
+      ]
+    },{
+      "root": "pages/equip",
+      "pages": [
+        {
+          "path": "checkplan/index",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },{
+          "path": "checkplan/save",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },{
+          "path": "checkTask/index",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },{
+          "path": "checkTask/save",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },{
+          "path": "checkTask/record",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },{
+          "path": "checkTask/recordSave",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },{
+          "path": "repair/report/index",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },{
+          "path": "repair/report/assignUser",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },{
+          "path": "repair/report/checkLine",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },{
+          "path": "repair/report/line",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },{
+          "path": "repair/report/lineSave",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },{
+          "path": "repair/report/save",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        }
+      ]
+    }
+  ],
+  "tabBar": {
+    "color": "#000000",
+    "selectedColor": "#1890ff",
+    "borderStyle": "white",
+    "backgroundColor": "#ffffff",
+    "list": [
+      {
+        "pagePath": "pages/index",
+        "iconPath": "static/images/tabbar/home.png",
+        "selectedIconPath": "static/images/tabbar/home_.png",
+        "text": "应用中心"
+      },
+      {
+        "pagePath": "pages/mine",
+        "iconPath": "static/images/tabbar/mine.png",
+        "selectedIconPath": "static/images/tabbar/mine_.png",
+        "text": "我的"
+      }
+    ]
+  },
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "cass",
+    "navigationBarBackgroundColor": "#FFFFFF",
+    "backgroundColor": "#F8F8F8",
+    "app-plus": {
+      "statusbar": {
+        "immersed": "supportedDevice",
+        "style": "dark"
+      }
+    }
+  }
+}
