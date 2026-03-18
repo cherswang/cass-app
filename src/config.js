@@ -1,6 +1,6 @@
 // 应用全局配置
 // const defaultBaseUrl = 'http://192.168.0.120:82';
-const defaultBaseUrl = 'http://192.168.41.102:82';
+const defaultBaseUrl = 'http://192.168.41.101:82';
 
 const config = {
    // baseUrl: 'https://vue.ruoyi.vip/prod-api',

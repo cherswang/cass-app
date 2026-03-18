@@ -142,18 +142,24 @@ export default {
     // 接收参数
     this.bpmList.runId = options.runId || '';
     this.bpmList.flowId = options.flowId || '';
-    this.bpmList.flowTitle = options.flowTitle || '';
+    this.bpmList.flowTitle = options.flowTitle ? decodeURIComponent(options.flowTitle) : '';
     this.bpmList.urgency = options.urgency || '0';
     this.bpmStepRun.stepRunId = options.stepRunId || '';
+    const opType = options.opType || '';
     
     console.log('处理后的参数:', {
       runId: this.bpmList.runId,
       flowId: this.bpmList.flowId,
-      stepRunId: this.bpmStepRun.stepRunId
+      stepRunId: this.bpmStepRun.stepRunId,
+      opType: opType
     });
     
     // 加载数据
-    this.getHandleBpmFormDataBean();
+    if (opType === 'start') {
+      this.getCreateBpmFormDataBean();
+    } else {
+      this.getHandleBpmFormDataBean();
+    }
     this.getBpmCommIdeaList();
   },
   methods: {
@@ -304,6 +310,48 @@ export default {
       }
     },
     
+    // 获取发起表单数据
+    async getCreateBpmFormDataBean() {
+      try {
+        console.log('准备获取发起表单数据，参数:', {
+          flowId: this.bpmList.flowId,
+          flowTitle: this.bpmList.flowTitle,
+          urgency: this.bpmList.urgency
+        });
+        const res = await API.bpm.bpmForm.getCreateBpmFormDataBean.get({
+          flowId: this.bpmList.flowId,
+          flowTitle: this.bpmList.flowTitle,
+          urgency: this.bpmList.urgency
+        });
+        console.log('获取发起表单数据响应:', res);
+        if (res.code === 200) {
+          const data = res.data || {};
+          // 直接赋值，参考Vue后台的处理方式
+          this.bpmList = data.bpmList || this.bpmList;
+          this.bpmStep = data.bpmStep || this.bpmStep;
+          this.bpmStepRun = data.bpmStepRun || this.bpmStepRun;
+          this.formJson = data.formJson;
+          this.formData = data.formData;
+          // 设置页面标题
+          uni.setNavigationBarTitle({ title: this.bpmList.flowTitle || '发起流程' });
+        } else {
+          // 其他错误
+          uni.showToast({ title: res.message || '获取数据失败', icon: 'none' });
+          setTimeout(() => {
+            uni.navigateBack();
+          }, 1500);
+        }
+      } catch (error) {
+        console.error('获取发起表单数据失败:', error);
+        uni.showToast({ title: '获取数据失败', icon: 'none' });
+        setTimeout(() => {
+          uni.navigateBack();
+        }, 1500);
+      } finally {
+        this.loading = false;
+      }
+    },
+    
     // 获取常用审批意见
     async getBpmCommIdeaList() {
       try {
@@ -413,7 +461,7 @@ export default {
         
         if (res.code === 200) {
           console.log('保存成功');
-          uni.showToast({ title: '提交成功', icon: 'success' });
+          uni.showToast({ title: '保存成功', icon: 'success' });
             setTimeout(() => {
               uni.navigateBack();
             }, 1500);
@@ -528,6 +576,7 @@ export default {
 <style lang="scss">
 .handle-container {
   padding: 15px;
+  padding-bottom: 80px;
   min-height: 100vh;
   background-color: #f5f5f5;
 }
@@ -695,15 +744,14 @@ export default {
 }
 
 .action-buttons {
-  margin-top: 20px;
-}
-
-.buttons-title {
-  display: block;
-  font-size: 14px;
-  font-weight: 500;
-  color: #333;
-  margin-bottom: 10px;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 15px;
+  background-color: white;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 100;
 }
 
 .buttons-container {
@@ -713,20 +761,30 @@ export default {
 
 .btn {
   flex: 1;
-  height: 44px;
+  height: 38px;
   border-radius: 8px;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 500;
   border: none;
+  transition: all 0.3s;
 }
 
-.btn.reject {
+.btn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+.btn.save {
   background-color: #ff4d4f;
   color: white;
 }
 
-.btn.approve {
-  background-color: #52c41a;
+.btn.submit {
+  background-color: #409eff;
   color: white;
 }
 

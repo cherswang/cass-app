@@ -1,6 +1,6 @@
 {
     "name" : "三辉OA",
-    "appid" : "__UNI__7804588",
+    "appid" : "__UNI__504C480",
     "description" : "",
     "versionName" : "1.0.0",
     "versionCode" : 101,
@@ -10,8 +10,8 @@
         "usingComponents" : true,
         "nvueStyleCompiler" : "uni-app",
         "compilerVersion" : 3,
-        "optimization": {
-            "codeSpliting": false
+        "optimization" : {
+            "codeSpliting" : false
         },
         "splashscreen" : {
             "alwaysShowBeforeRender" : true,
@@ -20,7 +20,9 @@
             "delay" : 0
         },
         /* 模块配置 */
-        "modules" : {},
+        "modules" : {
+            "Geolocation" : {}
+        },
         /* 应用发布信息 */
         "distribute" : {
             /* android打包配置 */
@@ -50,7 +52,18 @@
             },
             /* SDK配置 */
             "sdkConfigs" : {
-                "ad" : {}
+                "ad" : {},
+                "geolocation" : {
+                    "amap" : {
+                        "name" : "amapn1kDJ538",
+                        "__platform__" : [ "android" ],
+                        "appkey_ios" : "",
+                        "appkey_android" : "8153741a69858f7d927d44fac746b0c4"
+                    },
+                    "system" : {
+                        "__platform__" : [ "ios", "android" ]
+                    }
+                }
             },
             "icons" : {
                 "android" : {
@@ -105,17 +118,17 @@
     "mp-toutiao" : {
         "usingComponents" : true
     },
-	"h5" : {
-	    "devServer" : {
-	        "proxy": {
-	            "/api": {
-	                "target": "http://localhost:81", // 你的后台地址
-	                "changeOrigin": true, // 开启跨域
-	                "secure": false
-	            }
-	        }
-	    }
-	},
+    "h5" : {
+        "devServer" : {
+            "proxy" : {
+                "/api" : {
+                    "target" : "http://localhost:81", // 你的后台地址
+                    "changeOrigin" : true, // 开启跨域
+                    "secure" : false
+                }
+            }
+        }
+    },
     "uniStatistics" : {
         "enable" : false
     },

@@ -23,7 +23,7 @@
         @refresherrefresh="onRefresh" 
         @scrolltolower="onReachBottom"
         :refresher-enabled="true"
-        :refresher-threshold="90"
+        :refresher-threshold="150"
         :refresher-default-style="'black'"
         :refresher-background="'#f5f5f5'"
       >
@@ -82,7 +82,17 @@
                 <text class="content-value">{{ item.recTime }}</text>
               </view>
               <view class="item-footer">
-                <button class="handle-btn" @click.stop="navigateToDetail(item)">办理</button>
+                <view class="btn-container">
+                  <button class="handle-btn" @click.stop="navigateToDetail(item)">办理</button>
+                  <!-- <button class="handle-btn" @click.stop="navigateToDetail(item)">办理1</button>
+                  <button class="handle-btn" @click.stop="navigateToDetail(item)">办理2</button>
+                  <button class="handle-btn" @click.stop="navigateToDetail(item)">办理</button>
+                  <button class="handle-btn" @click.stop="navigateToDetail(item)">办理1</button>
+                  <button class="handle-btn" @click.stop="navigateToDetail(item)">办理2</button>
+                  <button class="handle-btn" @click.stop="navigateToDetail(item)">办理</button>
+                  <button class="handle-btn" @click.stop="navigateToDetail(item)">办理1</button>
+                  <button class="handle-btn" @click.stop="navigateToDetail(item)">办理2</button> -->
+                </view>
               </view>
             </view>
           </view>
@@ -518,27 +528,39 @@ export default {
 
 /* 底部操作栏 */
 .item-footer {
-  margin-top: 12px;
-  padding-top: 12px;
+  margin-top: 10px;
+  padding-top: 10px;
   border-top: 1px solid #f0f0f0;
-  display: flex;
-  justify-content: flex-end;
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* 按钮容器 */
+.btn-container {
+  width: 100%;
+  padding-left: 0;
+  margin-left: 0;
+  font-size: 0; /* 消除inline-block元素间的空格 */
 }
 
 /* 办理按钮 */
 .handle-btn {
+  display: inline-block;
+  margin-right: 10px;
+  margin-bottom: 10px;
+  vertical-align: middle;
   background-color: #409eff;
   color: white;
   border: none;
   border-radius: 4px;
-  padding: 6px 14px;
+  padding: 0 14px;
   font-size: 13px;
   cursor: pointer;
   height: 32px;
   line-height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  text-align: center;
+  box-sizing: border-box;
 }
 
 .handle-btn:active {

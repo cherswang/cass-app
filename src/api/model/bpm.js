@@ -82,6 +82,19 @@ export default {
         }
       }
     },
+    bpmSort: {
+      getBpmSortByRole: {
+        url: `/get/bpm/getBpmSortByRole`,
+        name: "获取根据用户角色分配的分类名称",
+        get: async function (params) {
+          return await http({
+            url: this.url,
+            method: 'GET',
+            params: params
+          });
+        }
+      }
+    },
     bpmFlow: {
       getEndBpmFlowList: {
         url: `/get/bpm/getEndBpmFlowList`,
@@ -108,6 +121,39 @@ export default {
       getDoingBpmFlowList: {
         url: `/get/bpm/getDoingBpmFlowList`,
         name: "获取当用户办理中的流程列表",
+        get: async function (params) {
+          return await http({
+            url: this.url,
+            method: 'GET',
+            params: params
+          });
+        }
+      },
+      getMyCommonBpmFlowList: {
+        url: `/get/bpm/getMyCommonBpmFlowList`,
+        name: "获取常用分类模板",
+        get: async function (params) {
+          return await http({
+            url: this.url,
+            method: 'GET',
+            params: params
+          });
+        }
+      },
+      getMyBpmFlowList: {
+        url: `/get/bpm/getMyBpmFlowList`,
+        name: "获取全部分类模板",
+        get: async function (params) {
+          return await http({
+            url: this.url,
+            method: 'GET',
+            params: params
+          });
+        }
+      },
+      getDocNumByBpmFlow: {
+        url: `/get/bpm/getDocNumByBpmFlow`,
+        name: "获取流程信息",
         get: async function (params) {
           return await http({
             url: this.url,
