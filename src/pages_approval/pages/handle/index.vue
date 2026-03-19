@@ -25,7 +25,29 @@
                   <view v-for="(row, rowIndex) in widget.rows" :key="row.id || rowIndex" class="table-row">
                     <view v-for="(col, colIndex) in row.cols" :key="col.id || colIndex" class="table-col">
                       <view v-for="(subWidget, subIndex) in (col.widgetList || [])" :key="subWidget.id || subIndex">
-                        <view v-html="renderWidget(subWidget)"></view>
+                        <!-- 处理日期类型 -->
+                        <template v-if="(subWidget.type === 'date' || subWidget.type === 'date-range') && subWidget.formItemFlag !== false && subWidget.options">
+                          <view class="form-field">
+                            <text class="field-label">{{ subWidget.options.label || subWidget.options.name || '' }}：</text>
+                            <view class="field-input" @tap="openCalendar(subWidget.options.name, subWidget.options.defaultValue ? (subWidget.type === 'date-range' ? subWidget.options.defaultValue.join(' ~ ') : subWidget.options.defaultValue) : '', subWidget.type === 'date-range' ? 'range' : 'single')">
+                              <input type="text" :value="subWidget.options.defaultValue ? (subWidget.type === 'date-range' ? subWidget.options.defaultValue.join(' ~ ') : subWidget.options.defaultValue) : ''" readonly style="cursor: pointer;" />
+                            </view>
+                          </view>
+                        </template>
+                        <!-- 处理输入框类型 -->
+                        <template v-else-if="subWidget.type === 'input' && subWidget.formItemFlag !== false && subWidget.options">
+                          <view class="form-field">
+                            <text class="field-label">{{ subWidget.options.label || subWidget.options.name || '' }}：</text>
+                            <view class="field-input">
+                              <input v-if="subWidget.options.type === 'text'" :value="subWidget.options.defaultValue || ''" :disabled="opType !== 'start'" @input="updateFormData(subWidget.options.name, $event.detail.value)" />
+                              <textarea v-else-if="subWidget.options.type === 'textarea'" :value="subWidget.options.defaultValue || ''" :disabled="opType !== 'start'" @input="updateFormData(subWidget.options.name, $event.detail.value)"></textarea>
+                            </view>
+                          </view>
+                        </template>
+                        <!-- 处理其他类型 -->
+                        <template v-else>
+                          <view v-html="renderWidget(subWidget)"></view>
+                        </template>
                       </view>
                     </view>
                   </view>
@@ -34,12 +56,58 @@
                 <view v-else-if="widget.type === 'grid' && widget.cols" class="grid-widget">
                   <view v-for="(col, colIndex) in widget.cols" :key="col.id || colIndex" class="grid-col">
                     <view v-for="(subWidget, subIndex) in (col.widgetList || [])" :key="subWidget.id || subIndex">
-                      <view v-html="renderWidget(subWidget)"></view>
+                      <!-- 处理日期类型 -->
+                      <template v-if="(subWidget.type === 'date' || subWidget.type === 'date-range') && subWidget.formItemFlag !== false && subWidget.options">
+                        <view class="form-field">
+                          <text class="field-label">{{ subWidget.options.label || subWidget.options.name || '' }}：</text>
+                          <view class="field-input" @tap="openCalendar(subWidget.options.name, subWidget.options.defaultValue ? (subWidget.type === 'date-range' ? subWidget.options.defaultValue.join(' ~ ') : subWidget.options.defaultValue) : '', subWidget.type === 'date-range' ? 'range' : 'single')">
+                            <input type="text" :value="subWidget.options.defaultValue ? (subWidget.type === 'date-range' ? subWidget.options.defaultValue.join(' ~ ') : subWidget.options.defaultValue) : ''" readonly style="cursor: pointer;" />
+                          </view>
+                        </view>
+                      </template>
+                      <!-- 处理输入框类型 -->
+                      <template v-else-if="subWidget.type === 'input' && subWidget.formItemFlag !== false && subWidget.options">
+                        <view class="form-field">
+                          <text class="field-label">{{ subWidget.options.label || subWidget.options.name || '' }}：</text>
+                          <view class="field-input">
+                            <input v-if="subWidget.options.type === 'text'" :value="subWidget.options.defaultValue || ''" :disabled="opType !== 'start'" @input="updateFormData(subWidget.options.name, $event.detail.value)" />
+                            <textarea v-else-if="subWidget.options.type === 'textarea'" :value="subWidget.options.defaultValue || ''" :disabled="opType !== 'start'" @input="updateFormData(subWidget.options.name, $event.detail.value)" />
+                          </view>
+                        </view>
+                      </template>
+                      <!-- 处理其他类型 -->
+                      <template v-else>
+                        <view v-html="renderWidget(subWidget)"></view>
+                      </template>
                     </view>
                   </view>
                 </view>
                 <!-- 处理其他类型 -->
-                <view v-else v-html="renderWidget(widget)"></view>
+                <template v-else>
+                  <!-- 处理日期类型 -->
+                  <template v-if="(widget.type === 'date' || widget.type === 'date-range') && widget.formItemFlag !== false && widget.options">
+                    <view class="form-field">
+                      <text class="field-label">{{ widget.options.label || widget.options.name || '' }}：</text>
+                      <view class="field-input" @tap="openCalendar(widget.options.name, widget.options.defaultValue ? (widget.type === 'date-range' ? widget.options.defaultValue.join(' ~ ') : widget.options.defaultValue) : '', widget.type === 'date-range' ? 'range' : 'single')">
+                        <input type="text" :value="widget.options.defaultValue ? (widget.type === 'date-range' ? widget.options.defaultValue.join(' ~ ') : widget.options.defaultValue) : ''" readonly style="cursor: pointer;" />
+                      </view>
+                    </view>
+                  </template>
+                  <!-- 处理输入框类型 -->
+                  <template v-else-if="widget.type === 'input' && widget.formItemFlag !== false && widget.options">
+                    <view class="form-field">
+                      <text class="field-label">{{ widget.options.label || widget.options.name || '' }}：</text>
+                      <view class="field-input">
+                        <input v-if="widget.options.type === 'text'" :value="widget.options.defaultValue || ''" :disabled="opType !== 'start'" @input="updateFormData(widget.options.name, $event.detail.value)" />
+                        <textarea v-else-if="widget.options.type === 'textarea'" :value="widget.options.defaultValue || ''" :disabled="opType !== 'start'" @input="updateFormData(widget.options.name, $event.detail.value)" />
+                      </view>
+                    </view>
+                  </template>
+                  <!-- 处理其他类型 -->
+                  <template v-else>
+                    <view v-html="renderWidget(widget)"></view>
+                  </template>
+                </template>
               </view>
             </view>
           </view>
@@ -93,6 +161,15 @@
         <button class="btn submit" @click="sendBpmToNext">提交</button>
       </view>
     </view>
+    
+    <!-- 日期选择器 -->
+    <u-calendar
+      :show="calendarVisible"
+      :mode="calendarMode"
+      :default-date="calendarDefaultDate"
+      @confirm="handleCalendarConfirm"
+      @close="handleCalendarClose"
+    />
   </view>
 </template>
 
@@ -105,6 +182,8 @@ export default {
     return {
       // 加载状态
       loading: true,
+      // 操作类型：start（新建）或 handle（办理）
+      opType: '',
       // 流程信息
       bpmList: {
         runId: '',
@@ -134,7 +213,13 @@ export default {
       formJson: null,
       formData: null,
       // 常用意见
-      commIdeaTextList: []
+      commIdeaTextList: [],
+      // 日期选择器
+      calendarVisible: false,
+      calendarMode: 'single', // single, multiple, range
+      calendarValue: '',
+      currentDateField: '',
+      calendarDefaultDate: ''
     };
   },
   onLoad(options) {
@@ -145,24 +230,36 @@ export default {
     this.bpmList.flowTitle = options.flowTitle ? decodeURIComponent(options.flowTitle) : '';
     this.bpmList.urgency = options.urgency || '0';
     this.bpmStepRun.stepRunId = options.stepRunId || '';
-    const opType = options.opType || '';
+    this.opType = options.opType || '';
     
     console.log('处理后的参数:', {
       runId: this.bpmList.runId,
       flowId: this.bpmList.flowId,
       stepRunId: this.bpmStepRun.stepRunId,
-      opType: opType
+      opType: this.opType
     });
     
     // 加载数据
-    if (opType === 'start') {
+    if (this.opType === 'start') {
       this.getCreateBpmFormDataBean();
     } else {
       this.getHandleBpmFormDataBean();
     }
     this.getBpmCommIdeaList();
   },
+  mounted() {
+    console.log('组件已挂载');
+  },
   methods: {
+    // 打开日期选择器
+    openCalendar(field, value, mode = 'single') {
+      console.log('打开日期选择器:', { field, value, mode });
+      this.currentDateField = field;
+      this.calendarMode = mode;
+      this.calendarDefaultDate = value || '';
+      this.calendarVisible = true;
+      console.log('日期选择器状态:', { calendarVisible: this.calendarVisible, calendarMode: this.calendarMode, calendarDefaultDate: this.calendarDefaultDate, currentDateField: this.currentDateField });
+    },
     // 渲染单个组件
     renderWidget(widget) {
       if (!widget) return '';
@@ -201,18 +298,32 @@ export default {
       if (widget.formItemFlag !== false) {
         const label = widget.options ? (widget.options.label || widget.options.name || '') : '';
         let value = '';
+        const isEditable = this.opType === 'start';
         
         if (widget.type === 'input' && widget.options) {
           if (widget.options.type === 'text') {
             value = widget.options.defaultValue || '';
-            return `<view class="form-field"><text class="field-label">${label}：</text><view class="field-input"><input value="${value}" disabled /></view></view>`;
+            return `<view class="form-field"><text class="field-label">${label}：</text><view class="field-input"><input value="${value}" ${isEditable ? '' : 'disabled'} /></view></view>`;
           } else if (widget.options.type === 'textarea') {
             value = widget.options.defaultValue || '';
-            return `<view class="form-field"><text class="field-label">${label}：</text><view class="field-input"><textarea value="${value}" disabled></textarea></view></view>`;
+            return `<view class="form-field"><text class="field-label">${label}：</text><view class="field-input"><textarea value="${value}" ${isEditable ? '' : 'disabled'}></textarea></view></view>`;
           }
-        } else if (widget.type === 'date-range' && widget.options && widget.options.defaultValue) {
-          value = widget.options.defaultValue.join(' ~ ');
-          return `<view class="form-field"><text class="field-label">${label}：</text><view class="field-input"><text class="field-value">${value}</text></view></view>`;
+        } else if (widget.type === 'date-range' && widget.options) {
+          value = widget.options.defaultValue ? widget.options.defaultValue.join(' ~ ') : '';
+          if (isEditable) {
+            console.log('渲染date-range组件:', { name: widget.options.name, value: value });
+            return `<view class="form-field"><text class="field-label">${label}：</text><view class="field-input" @tap="openCalendar('${widget.options.name}', '${value}', 'range')"><input type="text" value="${value}" readonly style="cursor: pointer;" /></view></view>`;
+          } else {
+            return `<view class="form-field"><text class="field-label">${label}：</text><view class="field-input"><text class="field-value">${value || '无'}</text></view></view>`;
+          }
+        } else if (widget.type === 'date' && widget.options) {
+          value = widget.options.defaultValue || '';
+          if (isEditable) {
+            console.log('渲染date组件:', { name: widget.options.name, value: value });
+            return `<view class="form-field"><text class="field-label">${label}：</text><view class="field-input" @tap="openCalendar('${widget.options.name}', '${value}', 'single')"><input type="text" value="${value}" readonly style="cursor: pointer;" /></view></view>`;
+          } else {
+            return `<view class="form-field"><text class="field-label">${label}：</text><view class="field-input"><text class="field-value">${value || '无'}</text></view></view>`;
+          }
         } else {
           value = widget.options ? widget.options.defaultValue || '无' : '无';
           return `<view class="form-field"><text class="field-label">${label}：</text><view class="field-input"><text class="field-value">${value}</text></view></view>`;
@@ -422,17 +533,18 @@ export default {
     },
     
     // 保存表单数据
-    async saveFormData() {
+    async saveFormData(shouldNavigateBack = true) {
       try {
-        // 直接使用formData，与Vue后台保持一致
-        let formDataToSend = this.formData || {};
+        // 从formJson中提取所有字段的数据
+        let formDataToSend = this.extractFormData();
         
-        // 如果formData为空，尝试从formJson中提取
-        if (Object.keys(formDataToSend).length === 0 && this.formJson) {
-          console.log('formData为空，尝试从formJson中提取');
-          formDataToSend = this.extractFormData();
-          console.log('从formJson中提取的表单数据:', formDataToSend);
+        // 如果this.formData中有数据，用它来覆盖提取的数据
+        if (this.formData && Object.keys(this.formData).length > 0) {
+          console.log('使用this.formData中的数据覆盖提取的数据');
+          formDataToSend = { ...formDataToSend, ...this.formData };
         }
+        
+        console.log('使用的表单数据:', formDataToSend);
         
         // 创建请求数据
         const requestData = {
@@ -449,27 +561,64 @@ export default {
           runAttach: this.bpmList.runAttach || ''
         };
         
-        console.log('使用的表单数据:', formDataToSend);
         console.log('保存表单数据请求参数:', requestData);
         
-        // 使用API调用，设置Content-Type为application/x-www-form-urlencoded
-        const res = await API.bpm.bpmFormData.saveBpmFormData.post(requestData, {
-          header: {
-            'Content-Type': 'application/x-www-form-urlencoded'
-          }
-        });
+        // 直接使用uni.request发送请求，与Vue后台保持一致
+        const url = this.opType === 'start' ? '/set/bpm/createBpmFormData' : '/set/bpm/saveBpmFormData';
         
-        if (res.code === 200) {
-          console.log('保存成功');
-          uni.showToast({ title: '保存成功', icon: 'success' });
-            setTimeout(() => {
-              uni.navigateBack();
-            }, 1500);
-          return res;
-        } else {
-          uni.showToast({ title: res.message || '保存失败', icon: 'none' });
-          throw res;
+        // 构建表单参数
+        let formParams = '';
+        for (const key in requestData) {
+          if (requestData.hasOwnProperty(key)) {
+            const value = requestData[key];
+            if (value !== null && value !== undefined) {
+              formParams += `${key}=${value}&`;
+            }
+          }
         }
+        formParams = formParams.slice(0, -1);
+        
+        console.log('构建的表单参数:', formParams);
+        
+        return new Promise((resolve, reject) => {
+          uni.request({
+            url: 'http://192.168.41.101:82' + url,
+            method: 'POST',
+            data: formParams,
+            header: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+              'Authorization': 'Bearer ' + uni.getStorageSync('token'),
+              'clientid': '428a8310cd442757ae699df5d894f051'
+            },
+            success: (res) => {
+              console.log('保存表单数据响应:', res);
+              if (res.statusCode === 200) {
+                const data = res.data;
+                if (data.code === 200) {
+                  console.log('保存成功');
+                  uni.showToast({ title: '保存成功', icon: 'success' });
+                  if (shouldNavigateBack) {
+                    setTimeout(() => {
+                      uni.navigateBack();
+                    }, 1500);
+                  }
+                  resolve(data);
+                } else {
+                  uni.showToast({ title: data.message || '保存失败', icon: 'none' });
+                  reject(data);
+                }
+              } else {
+                uni.showToast({ title: '保存失败', icon: 'none' });
+                reject(res);
+              }
+            },
+            fail: (error) => {
+              console.error('保存失败:', error);
+              uni.showToast({ title: '保存失败', icon: 'none' });
+              reject(error);
+            }
+          });
+        });
       } catch (error) {
         console.error('保存失败:', error);
         uni.showToast({ title: '保存失败', icon: 'none' });
@@ -486,7 +635,19 @@ export default {
         console.log('当前bpmList:', this.bpmList);
         
         // 先保存表单数据
-        await this.saveFormData();
+        const saveRes = await this.saveFormData(false);
+        
+        // 如果是新建流程，更新runId和stepRunId
+        if (this.opType === 'start' && saveRes && saveRes.data) {
+          if (saveRes.data.runId) {
+            this.bpmList.runId = saveRes.data.runId;
+          }
+          if (saveRes.data.stepRunId) {
+            this.bpmStepRun.stepRunId = saveRes.data.stepRunId;
+          }
+          console.log('更新后的runId:', this.bpmList.runId);
+          console.log('更新后的stepRunId:', this.bpmStepRun.stepRunId);
+        }
         
         // 获取下一步流程信息
         console.log('准备获取下一步流程信息');
@@ -568,6 +729,149 @@ export default {
     // 返回上一页
     navigateBack() {
       uni.navigateBack();
+    },
+    
+    // 打开日期选择器
+    openCalendar(field, value, mode = 'single') {
+      console.log('打开日期选择器:', { field, value, mode, type: typeof value, isArray: Array.isArray(value) });
+      this.currentDateField = field;
+      this.calendarMode = mode;
+      
+      // 处理value是数组的情况（日期范围）
+      if (Array.isArray(value)) {
+        this.calendarDefaultDate = value.join(' ~ ');
+      } else {
+        this.calendarDefaultDate = value || '';
+      }
+      
+      this.calendarVisible = true;
+      console.log('日期选择器状态:', { calendarVisible: this.calendarVisible, calendarMode: this.calendarMode, calendarDefaultDate: this.calendarDefaultDate, currentDateField: this.currentDateField });
+    },
+    
+    // 日期选择完成
+    handleCalendarConfirm(e) {
+      console.log('日期选择器返回值:', e);
+      let value = '';
+      if (this.calendarMode === 'range') {
+        // 处理日期范围选择
+        let dateArray = [];
+        if (Array.isArray(e)) {
+          // 直接返回数组的情况
+          dateArray = e;
+        } else if (e && e.value && Array.isArray(e.value)) {
+          dateArray = e.value;
+        } else if (e && e.detail && e.detail.value && Array.isArray(e.detail.value)) {
+          dateArray = e.detail.value;
+        }
+        
+        // 确保只取前两个日期作为范围
+        if (dateArray.length >= 2) {
+          value = dateArray.slice(0, 2).join(' ~ ');
+        } else if (dateArray.length === 1) {
+          value = dateArray[0];
+        }
+      } else {
+        // 处理单个日期选择
+        if (e && e.value) {
+          value = e.value;
+        } else if (e && e.detail && e.detail.value) {
+          value = e.detail.value;
+        }
+      }
+      console.log('处理后的日期值:', value);
+      this.calendarValue = value;
+      
+      // 更新表单数据
+      if (this.currentDateField && value) {
+        // 更新formData
+        if (!this.formData) {
+          this.formData = {};
+        }
+        this.formData[this.currentDateField] = value;
+        console.log('更新formData:', { [this.currentDateField]: value });
+        
+        // 更新formJson中的默认值，确保页面显示更新
+        this.updateFormJsonDefaultValue(this.currentDateField, value);
+      }
+      
+      this.calendarVisible = false;
+    },
+    
+    // 更新formData
+    updateFormData(fieldName, value) {
+      console.log('更新表单数据:', { fieldName, value });
+      
+      // 更新formData
+      if (!this.formData) {
+        this.formData = {};
+      }
+      this.formData[fieldName] = value;
+      console.log('更新formData:', { [fieldName]: value });
+      
+      // 更新formJson中的默认值，确保页面显示更新
+      this.updateFormJsonDefaultValue(fieldName, value);
+    },
+    
+    // 更新formJson中的默认值
+    updateFormJsonDefaultValue(fieldName, value) {
+      if (!this.formJson || !this.formJson.widgetList || !value) return;
+      
+      console.log('开始更新formJson中的字段:', { fieldName, value, calendarMode: this.calendarMode });
+      
+      // 递归遍历widgetList，找到对应的字段并更新defaultValue
+      const traverseWidgets = (widgets) => {
+        if (!widgets) return;
+        
+        widgets.forEach(widget => {
+          // 处理容器类型
+          if (widget.category === 'container') {
+            if (widget.type === 'grid' && widget.cols) {
+              widget.cols.forEach(col => {
+                if (col.widgetList) {
+                  traverseWidgets(col.widgetList);
+                }
+              });
+            } else if (widget.type === 'table' && widget.rows) {
+              widget.rows.forEach(row => {
+                if (row.cols) {
+                  row.cols.forEach(col => {
+                    if (col.widgetList) {
+                      traverseWidgets(col.widgetList);
+                    }
+                  });
+                }
+              });
+            } else if (widget.widgetList) {
+              traverseWidgets(widget.widgetList);
+            }
+          } 
+          // 处理字段类型
+          else if (widget.formItemFlag !== false && widget.options && widget.options.name === fieldName) {
+            // 更新defaultValue
+            let updateValue = value;
+            // 处理日期范围类型
+            if (widget.type === 'date-range' && typeof value === 'string' && value.includes(' ~ ')) {
+              updateValue = value.split(' ~ ');
+              console.log('处理日期范围值:', { original: value, updated: updateValue });
+            }
+            // 使用Vue.set确保响应式更新
+            this.$set(widget.options, 'defaultValue', updateValue);
+            console.log('更新formJson中的字段:', { fieldName, value: widget.options.defaultValue });
+          }
+        });
+      };
+      
+      // 开始遍历
+      traverseWidgets(this.formJson.widgetList);
+      
+      // 强制重新渲染
+      this.$forceUpdate();
+      console.log('强制页面重新渲染');
+    },
+    
+    // 关闭日期选择器
+    handleCalendarClose() {
+      this.calendarVisible = false;
     }
   }
 };
@@ -825,23 +1129,40 @@ export default {
 
 .field-input {
   width: 100%;
+  min-width: 300rpx;
 }
 
 .field-input input,
 .field-input textarea {
   width: 100%;
-  padding: 8px;
+  padding: 12px;
   font-size: 14px;
   color: #666;
   background-color: #fafafa;
   border: 1px solid #e8e8e8;
   border-radius: 4px;
   box-sizing: border-box;
+  word-break: normal;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-height: 44px;
+  line-height: 20px;
+}
+
+/* 日期输入框特殊样式 */
+.field-input input[type="text"] {
+  min-width: 300rpx;
+  width: 100%;
 }
 
 .field-input textarea {
   min-height: 80px;
   resize: none;
+  word-break: break-all;
+  white-space: normal;
+  overflow: auto;
+  text-overflow: clip;
 }
 
 .form-rows {

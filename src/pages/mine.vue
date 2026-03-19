@@ -26,24 +26,24 @@
 
     <view class="content-section">
       <view class="menu-list">
-        <view class="list-cell list-cell-arrow" @click="handleToEditInfo">
+        <!-- <view class="list-cell list-cell-arrow" @click="handleToEditInfo">
           <view class="menu-item-box">
             <view class="iconfont icon-user menu-icon"></view>
             <view>编辑资料</view>
           </view>
         </view>
-        <!-- <view class="list-cell list-cell-arrow" @click="handleHelp">
+        <view class="list-cell list-cell-arrow" @click="handleHelp">
           <view class="menu-item-box">
             <view class="iconfont icon-help menu-icon"></view>
             <view>常见问题</view>
           </view>
-        </view>
+        </view> -->
         <view class="list-cell list-cell-arrow" @click="handleAbout">
           <view class="menu-item-box">
             <view class="iconfont icon-aixin menu-icon"></view>
             <view>关于我们</view>
           </view>
-        </view> -->
+        </view>
         <view class="list-cell list-cell-arrow" @click="handleToSetting">
           <view class="menu-item-box">
             <view class="iconfont icon-setting menu-icon"></view>
@@ -67,20 +67,31 @@
 
 <script setup>
   import store from '@/store'
-  import { ref } from "vue";
+  import { ref, computed } from "vue";
   import config from '@/config.js'
-  const name=store.state.user.name;
-  const userId=store.state.user.userid;
+  
+  // 使用getters获取用户信息，确保获取到的是最新的
+  const name = computed(() => store.getters.name);
+  const userId = computed(() => store.getters.userid);
+  // const avatar = computed(() => store.getters.avatar);
+  const avatar = 'http://192.168.41.101:82/get/file/getAvatar?avatar=5.png';
+  
   const version= config.appInfo.version;
-  const avatar=ref(store.state.user.avatar);
   const windowHeight=ref(uni.getSystemInfoSync().windowHeight - 50);
   const popup = ref(null);
   
-  uni.$on('refresh', () => {
-      avatar.value=store.state.user.avatar;
-  }) 
+  console.log('【mine.vue】初始化用户信息:', {
+    name: name.value,
+    userId: userId.value,
+    avatar: avatar.value
+  });
   
-  console.log(avatar.value)
+  uni.$on('refresh', () => {
+    // 刷新时重新获取用户信息
+    store.dispatch('GetInfo').catch(error => {
+      console.error('【mine.vue】刷新用户信息失败:', error);
+    });
+  });
   
   function handleToInfo() {
 	  uni.navigateTo({
@@ -133,15 +144,15 @@
     });
   };
   function handleAbout() {
-	  // uni.navigateTo({
-	  // 	url: '/pages_mine/pages/about/index'
-	  // });
-    uni.showToast({
-      title: '模块建设中~',
-      mask: false,
-      icon:"none",
-      duration: 1000
-    });
+	  uni.navigateTo({
+	  	url: '/pages_mine/pages/about/index'
+	  });
+    // uni.showToast({
+    //   title: '模块建设中~',
+    //   mask: false,
+    //   icon:"none",
+    //   duration: 1000
+    // });
   };
   function handleJiaoLiuQun() {
 	  // uni.showToast({

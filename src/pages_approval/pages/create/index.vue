@@ -22,7 +22,7 @@
     </view>
 
     <!-- 操作按钮 -->
-    <view class="action-buttons">
+    <view class="action-buttons" v-if="showClassField">
       <button 
         class="action-btn" 
         :class="{ active: activeTab === 'common' }"
@@ -36,7 +36,7 @@
     </view>
 
     <!-- 流程分类 -->
-    <view class="category-section">
+    <view class="category-section" v-if="showClassField">
       <text class="section-title">流程分类</text>
       <scroll-view class="category-scroll" scroll-x>
         <view 
@@ -114,7 +114,8 @@ export default {
       searchKeyword: '',
       bpmSortList: [],
       bpmFlowList: [],
-      bpmRemark: ''
+      bpmRemark: '',
+      showClassField: false,//暂时屏蔽掉类别切换和流程分类，等后续工期给了之后再开启
     };
   },
 

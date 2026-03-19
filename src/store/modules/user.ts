@@ -68,20 +68,44 @@ const user: Module<UserState, UserState> = {
             console.warn("No token found in response:", data)
           }
           console.log("登录用户信息为：",data.data);
-          // 保存用户信息到本地存储
-          if (data.data) {
-            uni.setStorageSync('USER_INFO', data.data.userInfo || {});
-            // 添加安全检查，确保userInfo存在
-            if (data.data.userInfo) {
-              uni.setStorageSync('APP_COLOR', data.data.userInfo.theme || '');
-              uni.setStorageSync('USER_DARK_MODE', data.data.userInfo.dark === 'true' ? true : false);
-              uni.setStorageSync('USER_LANGUAGE', data.data.userInfo.language || 'zh-cn');
-            }
-            // 保存其他数据，添加安全检查
+          
+          // 保存用户信息到本地存储和store中
+          if (data.data && data.data.userInfo) {
+            const userInfo = data.data.userInfo;
+            
+            // 保存到本地存储
+            uni.setStorageSync('USER_INFO', userInfo);
+            uni.setStorageSync('APP_COLOR', userInfo.theme || '');
+            uni.setStorageSync('USER_DARK_MODE', userInfo.dark === 'true' ? true : false);
+            uni.setStorageSync('USER_LANGUAGE', userInfo.language || 'zh-cn');
+            
+            // 保存其他数据
             uni.setStorageSync('MSG_TIME', data.data.msgtime || '');
             uni.setStorageSync('WATER_MARK', data.data.waterMark || '');
             uni.setStorageSync('WATER_MARK_CONTENT', data.data.waterMarkContent || '');
             uni.setStorageSync('WATER_MARK_SUBTEXT', data.data.waterMarkSubtext || '');
+            
+            // 更新store中的用户信息
+            commit('SET_NAME', userInfo.userName || '');
+            commit('SET_NICKNAME', userInfo.nickName || '');
+            commit('SET_USERID', userInfo.accountId || '');
+            
+            // 头像处理
+            let avatar = userInfo.avatar || '';
+            if (!avatar) {
+              avatar = '/static/images/profile.jpg';
+            } else if (!avatar.startsWith('http')) {
+              // 如果头像路径是相对路径，拼接基础URL
+              avatar = baseUrl + avatar;
+            }
+            commit('SET_AVATAR', avatar);
+            
+            console.log('【Login】更新store中的用户信息:', {
+              name: userInfo.userName,
+              nickname: userInfo.nickName,
+              userid: userInfo.accountId,
+              avatar: avatar
+            });
           }
           
           resolve(data)
@@ -141,12 +165,6 @@ const user: Module<UserState, UserState> = {
           commit('SET_NICKNAME', nickname)
           commit('SET_USERID', userid)
           commit('SET_AVATAR', avatar)
-
-          // 可以设置更多字段
-          commit('SET_PHONE', data.phone || '')
-          commit('SET_EMAIL', data.email || '')
-          commit('SET_DEPT_ID', data.deptId || '')
-          commit('SET_DEPT_NAME', data.deptName || '')
 
           resolve(res)
         }).catch(error => {

@@ -1,6 +1,6 @@
 <template>
   <view class="setting-container" :style="{height: `${windowHeight}px`}">
-    <view class="menu-list">
+    <view class="menu-list" v-if="showLaterFunction">
       <view class="list-cell list-cell-arrow" @click="handleToPwd">
         <view class="menu-item-box">
           <view class="iconfont icon-password menu-icon"></view>
@@ -45,6 +45,7 @@
   
   const windowHeight=ref(uni.getSystemInfoSync().windowHeight) ;
   const popup = ref(null);
+  const showLaterFunction = ref(false);//暂时屏蔽掉设置部分的额外功能，等后续工期给了之后再开启
   
   function handleToPwd() {
 	  uni.navigateTo({

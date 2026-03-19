@@ -6,19 +6,19 @@
         <view class="avatar">{{ username.charAt(0) }}</view>
         <view class="user-text">
           <text class="name">{{ username }}</text>
-          <text class="rule" @click="showCheckinRules">考勤(查看规则)</text>
+          <text class="rule" @click="showCheckinRules">考勤规则</text>
         </view>
         <!-- <text class="record-btn" @click="viewCheckinRecord">查看记录</text> -->
       </view>
       <view class="attend-record">
         <view class="record-item">
-          <text class="label">上班09:00</text>
+          <text class="label">上班{{ checkinTimeRules.morningStart }}</text>
           <view class="record-desc">
             <text class="time" :class="{ 'checked': morningChecked }">{{ morningCheckinTime || '未打卡' }}</text>
           </view>
         </view>
         <view class="record-item">
-          <text class="label">下班18:00</text>
+          <text class="label">下班{{ checkinTimeRules.afternoonEnd }}</text>
           <view class="record-desc">
             <text class="time" :class="{ 'checked': afternoonChecked }">{{ afternoonCheckinTime || '未打卡' }}</text>
             <text class="update" v-if="afternoonChecked" @click="updateAfternoonCheckin">更新打卡</text>
@@ -41,6 +41,10 @@
 	    <text class="tip-icon">📍</text>
 	    <text class="tip-text">经度: {{ currentLocation.longitude.toFixed(6) }} | 纬度: {{ currentLocation.latitude.toFixed(6) }}</text>
 	  </view>
+	  <view class="checkin-tip">
+	    <text class="tip-icon">🏢</text>
+	    <text class="tip-text">考勤地点: {{ checkinRange.address || '公司' }}</text>
+	  </view>
     </view>
     
     <!-- 打卡确认弹窗 -->
@@ -52,6 +56,8 @@
           <text class="detail-item">打卡类型: {{ currentCheckinTypeText }}</text>
           <text class="detail-item">打卡时间: {{ currentTime }}</text>
           <text class="detail-item">打卡位置: {{ addressInfo }}</text>
+          <text class="detail-item">考勤时间: {{ checkinTimeRules.morningStart }} - {{ checkinTimeRules.afternoonEnd }}</text>
+          <text class="detail-item">打卡范围: {{ checkinRange.disc }}米</text>
         </view>
         <view class="remark-section">
           <text class="remark-label">打卡备注 (选填):</text>
@@ -108,7 +114,21 @@ export default {
       // 下班打卡状态 1:已打卡 0:未打卡
       offStatus: 0,
       // 加载状态
-      loading: false
+      loading: false,
+      // 打卡时间规则
+      checkinTimeRules: {
+        morningStart: '09:00',
+        morningEnd: '12:00',
+        afternoonStart: '13:00',
+        afternoonEnd: '18:00'
+      },
+      // 打卡范围配置
+      checkinRange: {
+        lon: 0,
+        lat: 0,
+        disc: 500, // 默认500米
+        address: ''
+      }
     };
   },
   computed: {
@@ -248,6 +268,9 @@ export default {
           if (res.data) {
             this.attendConfig = res.data;
             this.opstatus = true;
+            
+            // 从考勤配置中提取打卡时间规则
+            this.extractCheckinTimeRules(res.data);
           } else {
             uni.showToast({ title: '请联系管理员正确设置个人考勤规则', icon: 'none' });
           }
@@ -258,6 +281,33 @@ export default {
         console.error('获取考勤配置失败:', error);
         uni.showToast({ title: '获取考勤配置失败', icon: 'none' });
       }
+    },
+    // 从考勤配置中提取打卡时间规则和范围配置
+    extractCheckinTimeRules(config) {
+      // 提取打卡时间规则
+      if (config.beginTime) {
+        this.checkinTimeRules.morningStart = config.beginTime;
+      }
+      if (config.endTime) {
+        this.checkinTimeRules.afternoonEnd = config.endTime;
+      }
+      
+      // 提取打卡范围配置
+      if (config.lon) {
+        this.checkinRange.lon = config.lon;
+      }
+      if (config.lat) {
+        this.checkinRange.lat = config.lat;
+      }
+      if (config.disc) {
+        this.checkinRange.disc = config.disc;
+      }
+      if (config.address) {
+        this.checkinRange.address = config.address;
+      }
+      
+      console.log('提取的打卡时间规则:', this.checkinTimeRules);
+      console.log('提取的打卡范围配置:', this.checkinRange);
     },
     // 获取上班打卡状态
     async getAttendStatusDay() {
@@ -527,23 +577,32 @@ export default {
 }
 
 .checkin-btn {
-  background: linear-gradient(135deg, #1890ff 0%, #40a9ff 100%);
+  background: #1890ff;
   color: white;
   border-radius: 50%;
   width: 180px;
   height: 180px;
-  margin: 0 auto 15px;
+  margin: 10px auto 15px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px rgba(24, 144, 255, 0.3);
-  transition: all 0.3s ease;
+  animation: pulse 2s infinite;
 }
 
-.checkin-btn:active {
-  transform: scale(0.95);
-  box-shadow: 0 2px 8px rgba(24, 144, 255, 0.3);
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(24, 144, 255, 0.4);
+  }
+  70% {
+    transform: scale(1.02);
+    box-shadow: 0 0 0 15px rgba(24, 144, 255, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(24, 144, 255, 0);
+  }
 }
 
 .btn-title {
@@ -606,6 +665,7 @@ export default {
   align-items: center;
   justify-content: center;
   z-index: 9999;
+  animation: fadeIn 0.3s ease-out;
 }
 
 .confirm-content {
@@ -615,6 +675,27 @@ export default {
   width: 90%;
   max-width: 400px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 .confirm-title {

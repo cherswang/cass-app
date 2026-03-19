@@ -47,13 +47,13 @@ const request = <T>(config:RequestConfig):Promise<ResponseData<T>> => {
     let requestData = config.data;
     const contentType = config.header['Content-Type'] || config.header['content-type'];
     if (config.method === 'POST' && contentType === 'application/x-www-form-urlencoded' && requestData && typeof requestData === 'object') {
-      // 将对象转换为表单字符串
+      // 将对象转换为表单字符串，与Vue后台保持一致，不对值进行encodeURIComponent处理
       const paramsArray = [];
       for (const key in requestData) {
         if (requestData.hasOwnProperty(key)) {
           const value = requestData[key];
           if (value !== null && value !== undefined) {
-            paramsArray.push(`${encodeURIComponent(key)}=${encodeURIComponent(typeof value === 'object' ? JSON.stringify(value) : value)}`);
+            paramsArray.push(`${key}=${typeof value === 'object' ? JSON.stringify(value) : value}`);
           }
         }
       }
