@@ -12,7 +12,6 @@
 
     <!-- 流程表单 -->
     <view class="form-section">
-      <text class="section-title">表单内容</text>
       <view class="form-content">
         <text v-if="loading">加载中...</text>
         <view v-else>
@@ -20,10 +19,10 @@
           <view v-if="formJson && formJson.widgetList" class="form-fields">
             <view class="form-rows">
               <view v-for="(widget, index) in formJson.widgetList" :key="widget.id || index">
-                <!-- 处理表格类型 -->
-                <view v-if="widget.type === 'table' && widget.rows" class="table-widget">
-                  <view v-for="(row, rowIndex) in widget.rows" :key="row.id || rowIndex" class="table-row">
-                    <view v-for="(col, colIndex) in row.cols" :key="col.id || colIndex" class="table-col">
+                <!-- 处理表格类型：将所有元素提取出来，按照从上到下的顺序排列 -->
+                <template v-if="widget.type === 'table' && widget.rows">
+                  <view v-for="(row, rowIndex) in widget.rows" :key="row.id || rowIndex">
+                    <view v-for="(col, colIndex) in row.cols" :key="col.id || colIndex">
                       <view v-for="(subWidget, subIndex) in (col.widgetList || [])" :key="subWidget.id || subIndex">
                         <!-- 处理日期类型 -->
                         <template v-if="(subWidget.type === 'date' || subWidget.type === 'date-range') && subWidget.formItemFlag !== false && subWidget.options">
@@ -51,10 +50,10 @@
                       </view>
                     </view>
                   </view>
-                </view>
-                <!-- 处理网格类型 -->
-                <view v-else-if="widget.type === 'grid' && widget.cols" class="grid-widget">
-                  <view v-for="(col, colIndex) in widget.cols" :key="col.id || colIndex" class="grid-col">
+                </template>
+                <!-- 处理网格类型：将所有元素提取出来，按照从上到下的顺序排列 -->
+                <template v-else-if="widget.type === 'grid' && widget.cols">
+                  <view v-for="(col, colIndex) in widget.cols" :key="col.id || colIndex">
                     <view v-for="(subWidget, subIndex) in (col.widgetList || [])" :key="subWidget.id || subIndex">
                       <!-- 处理日期类型 -->
                       <template v-if="(subWidget.type === 'date' || subWidget.type === 'date-range') && subWidget.formItemFlag !== false && subWidget.options">
@@ -81,7 +80,7 @@
                       </template>
                     </view>
                   </view>
-                </view>
+                </template>
                 <!-- 处理其他类型 -->
                 <template v-else>
                   <!-- 处理日期类型 -->
@@ -175,6 +174,7 @@
 
 <script>
 import API from '@/api';
+import config from '@/config';
 
 export default {
   components: {},
@@ -266,24 +266,9 @@ export default {
       
       // 处理容器类型组件
       if (widget.category === 'container') {
-        // 处理网格容器
-        if (widget.type === 'grid' && widget.cols) {
-          return widget.cols.map((col, colIndex) => {
-            return col.widgetList ? col.widgetList.map((subWidget, subIndex) => {
-              return this.renderWidget(subWidget);
-            }).join('') : '';
-          }).join('');
-        }
-        
-        // 处理表格容器
-        if (widget.type === 'table' && widget.rows) {
-          return widget.rows.map((row, rowIndex) => {
-            return row.cols ? row.cols.map((col, colIndex) => {
-              return col.widgetList ? col.widgetList.map((subWidget, subIndex) => {
-                return this.renderWidget(subWidget);
-              }).join('') : '';
-            }).join('') : '';
-          }).join('');
+        // 网格和表格类型已经在模板中处理，这里跳过
+        if (widget.type === 'grid' || widget.type === 'table') {
+          return '';
         }
         
         // 处理其他容器类型
@@ -300,15 +285,15 @@ export default {
         let value = '';
         const isEditable = this.opType === 'start';
         
-        if (widget.type === 'input' && widget.options) {
+        if (widget.type === 'input' && widget.options && widget.options.name) {
           if (widget.options.type === 'text') {
             value = widget.options.defaultValue || '';
-            return `<view class="form-field"><text class="field-label">${label}：</text><view class="field-input"><input value="${value}" ${isEditable ? '' : 'disabled'} /></view></view>`;
+            return `<view class="form-field"><text class="field-label">${label}：</text><view class="field-input"><input value="${value}" ${isEditable ? '@input="updateFormData(\'' + widget.options.name + '\', $event.detail.value)"' : 'disabled'} /></view></view>`;
           } else if (widget.options.type === 'textarea') {
             value = widget.options.defaultValue || '';
-            return `<view class="form-field"><text class="field-label">${label}：</text><view class="field-input"><textarea value="${value}" ${isEditable ? '' : 'disabled'}></textarea></view></view>`;
+            return `<view class="form-field"><text class="field-label">${label}：</text><view class="field-input"><textarea value="${value}" ${isEditable ? '@input="updateFormData(\'' + widget.options.name + '\', $event.detail.value)"' : 'disabled'}></textarea></view></view>`;
           }
-        } else if (widget.type === 'date-range' && widget.options) {
+        } else if (widget.type === 'date-range' && widget.options && widget.options.name) {
           value = widget.options.defaultValue ? widget.options.defaultValue.join(' ~ ') : '';
           if (isEditable) {
             console.log('渲染date-range组件:', { name: widget.options.name, value: value });
@@ -316,7 +301,7 @@ export default {
           } else {
             return `<view class="form-field"><text class="field-label">${label}：</text><view class="field-input"><text class="field-value">${value || '无'}</text></view></view>`;
           }
-        } else if (widget.type === 'date' && widget.options) {
+        } else if (widget.type === 'date' && widget.options && widget.options.name) {
           value = widget.options.defaultValue || '';
           if (isEditable) {
             console.log('渲染date组件:', { name: widget.options.name, value: value });
@@ -325,8 +310,12 @@ export default {
             return `<view class="form-field"><text class="field-label">${label}：</text><view class="field-input"><text class="field-value">${value || '无'}</text></view></view>`;
           }
         } else {
-          value = widget.options ? widget.options.defaultValue || '无' : '无';
-          return `<view class="form-field"><text class="field-label">${label}：</text><view class="field-input"><text class="field-value">${value}</text></view></view>`;
+          value = widget.options ? widget.options.defaultValue || '' : '';
+          if (isEditable && widget.options && widget.options.name) {
+            return `<view class="form-field"><text class="field-label">${label}：</text><view class="field-input"><input value="${value}" @input="updateFormData('${widget.options.name}', $event.detail.value)" /></view></view>`;
+          } else {
+            return `<view class="form-field"><text class="field-label">${label}：</text><view class="field-input"><text class="field-value">${value || '无'}</text></view></view>`;
+          }
         }
       }
       
@@ -572,7 +561,7 @@ export default {
           if (requestData.hasOwnProperty(key)) {
             const value = requestData[key];
             if (value !== null && value !== undefined) {
-              formParams += `${key}=${value}&`;
+              formParams += `${key}=${encodeURIComponent(value)}&`;
             }
           }
         }
@@ -582,13 +571,13 @@ export default {
         
         return new Promise((resolve, reject) => {
           uni.request({
-            url: 'http://192.168.41.101:82' + url,
+            url: config.baseUrl + url,
             method: 'POST',
             data: formParams,
             header: {
               'Content-Type': 'application/x-www-form-urlencoded',
               'Authorization': 'Bearer ' + uni.getStorageSync('token'),
-              'clientid': '428a8310cd442757ae699df5d894f051'
+              'clientid': config.clientID
             },
             success: (res) => {
               console.log('保存表单数据响应:', res);
@@ -602,12 +591,21 @@ export default {
                       uni.navigateBack();
                     }, 1500);
                   }
-                  resolve(data);
+                  // 确保返回的数据结构正确
+                  resolve({
+                    data: {
+                      runId: data.runId || data.data?.runId || this.bpmList.runId,
+                      stepRunId: data.stepRunId || data.data?.stepRunId || this.bpmStepRun.stepRunId,
+                      ...data.data
+                    }
+                  });
                 } else {
+                  console.error('保存失败:', data);
                   uni.showToast({ title: data.message || '保存失败', icon: 'none' });
                   reject(data);
                 }
               } else {
+                console.error('保存失败:', res);
                 uni.showToast({ title: '保存失败', icon: 'none' });
                 reject(res);
               }
@@ -637,8 +635,14 @@ export default {
         // 先保存表单数据
         const saveRes = await this.saveFormData(false);
         
+        // 检查保存是否成功
+        if (!saveRes || !saveRes.data) {
+          uni.showToast({ title: '保存表单失败', icon: 'none' });
+          throw new Error('Save form data failed');
+        }
+        
         // 如果是新建流程，更新runId和stepRunId
-        if (this.opType === 'start' && saveRes && saveRes.data) {
+        if (this.opType === 'start' && saveRes.data) {
           if (saveRes.data.runId) {
             this.bpmList.runId = saveRes.data.runId;
           }
@@ -649,8 +653,24 @@ export default {
           console.log('更新后的stepRunId:', this.bpmStepRun.stepRunId);
         }
         
+        // 检查必要的参数
+        if (!this.bpmList.runId || !this.bpmStep.stepId || !this.bpmStepRun.stepRunId) {
+          console.error('缺少必要的参数:', {
+            runId: this.bpmList.runId,
+            stepId: this.bpmStep.stepId,
+            stepRunId: this.bpmStepRun.stepRunId
+          });
+          uni.showToast({ title: '缺少必要的流程参数', icon: 'none' });
+          throw new Error('Missing required parameters');
+        }
+        
         // 获取下一步流程信息
         console.log('准备获取下一步流程信息');
+        console.log('获取下一步流程信息参数:', {
+          runId: this.bpmList.runId,
+          currentStepId: this.bpmStep.stepId,
+          stepRunId: this.bpmStepRun.stepRunId
+        });
         const nextStepRes = await API.bpm.bpmStepRun.getNextBpmStep.get({
           runId: this.bpmList.runId,
           currentStepId: this.bpmStep.stepId,
@@ -666,8 +686,8 @@ export default {
           // 构建提交参数，与Vue后台保持一致
           const submitParams = {
             nextStepInfo: JSON.stringify(nextSteps),
-            runId: this.bpmList.runId || '',
-            stepRunId: this.bpmStepRun.stepRunId || '',
+            runId: this.bpmList.runId,
+            stepRunId: this.bpmStepRun.stepRunId,
             remindNextUser: '',
             remindCreateUser: '',
             remindParticipant: '',
@@ -698,6 +718,7 @@ export default {
             throw res;
           }
         } else {
+          console.error('未获取到下一步流程信息:', nextStepRes);
           uni.showToast({ title: '未获取到下一步流程信息', icon: 'none' });
           throw new Error('No next step information');
         }
@@ -772,7 +793,10 @@ export default {
         }
       } else {
         // 处理单个日期选择
-        if (e && e.value) {
+        if (Array.isArray(e) && e.length > 0) {
+          // 直接返回数组的情况（单个日期）
+          value = e[0];
+        } else if (e && e.value) {
           value = e.value;
         } else if (e && e.detail && e.detail.value) {
           value = e.detail.value;
@@ -946,31 +970,29 @@ export default {
 
 .form-section {
   background: white;
-  padding: 15px;
+  padding: 12px;
   border-radius: 8px;
-  margin-bottom: 15px;
+  margin-bottom: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .form-content {
   min-height: 100px;
-  padding: 10px;
-  background-color: #fafafa;
-  border-radius: 4px;
+  padding: 0;
   font-size: 14px;
   color: #666;
 }
 
 .approval-section {
   background: white;
-  padding: 15px;
+  padding: 12px;
   border-radius: 8px;
-  margin-bottom: 15px;
+  margin-bottom: 80px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .approval-status {
-  margin-bottom: 15px;
+  margin-bottom: 12px;
 }
 
 .status-label {
@@ -1013,17 +1035,19 @@ export default {
 
 .comment-input {
   width: 100%;
-  min-height: 100px;
+  min-height: 80px;
   padding: 10px;
-  border: 1px solid #d9d9d9;
-  border-radius: 4px;
+  border: 1px solid #e8e8e8;
+  border-radius: 6px;
   font-size: 14px;
   color: #333;
   resize: none;
+  transition: all 0.3s ease;
+  line-height: 1.5;
 }
 
 .common-ideas {
-  margin-top: 10px;
+  margin-top: 8px;
 }
 
 .ideas-label {
@@ -1109,51 +1133,82 @@ export default {
 .form-field {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
+  padding: 10px 0;
+  border-bottom: 1px solid #f0f0f0;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .field-label {
   font-size: 14px;
   font-weight: 500;
   color: #333;
+  text-align: left;
+}
+
+.field-input {
+  width: 100%;
+  position: relative;
+  display: flex;
+  align-items: center;
 }
 
 .field-value {
   font-size: 14px;
   color: #666;
-  padding: 8px;
+  padding: 8px 14px;
   background-color: #fafafa;
-  border-radius: 4px;
+  border-radius: 6px;
   word-break: break-all;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-.field-input {
-  width: 100%;
-  min-width: 300rpx;
+.form-field:last-child {
+  border-bottom: none;
 }
 
 .field-input input,
 .field-input textarea {
   width: 100%;
-  padding: 12px;
+  padding: 10px 14px;
   font-size: 14px;
   color: #666;
   background-color: #fafafa;
   border: 1px solid #e8e8e8;
-  border-radius: 4px;
+  border-radius: 6px;
   box-sizing: border-box;
   word-break: normal;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  min-height: 44px;
+  min-height: 40px;
   line-height: 20px;
+  transition: all 0.3s ease;
+}
+
+.field-input input:focus,
+.field-input textarea:focus {
+  border-color: #409eff;
+  box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
+  outline: none;
 }
 
 /* 日期输入框特殊样式 */
 .field-input input[type="text"] {
   min-width: 300rpx;
-  width: 100%;
+}
+
+/* 日期选择器图标 */
+.input-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #999;
+  font-size: 16px;
+  pointer-events: none;
 }
 
 .field-input textarea {
@@ -1163,6 +1218,9 @@ export default {
   white-space: normal;
   overflow: auto;
   text-overflow: clip;
+  white-space: normal;
+  line-height: 1.5;
+  padding: 12px;
 }
 
 .form-rows {

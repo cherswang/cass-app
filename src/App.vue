@@ -24,9 +24,13 @@ export default {
 		// 	})
 		// 	this.$socket.send({event:"on"})
 		// })
+		// 关闭启动页，避免重复返回进入导致的卡死
+		plus.navigator.closeSplashscreen();
 	},
 	onShow: function () {
 		console.log('App Show')
+		// 每次唤醒都强制关闭启动页，防止卡住
+		plus.navigator.closeSplashscreen();
 	},
 	onHide: function () {
 		console.log('App Hide')

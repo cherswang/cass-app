@@ -50,12 +50,14 @@ export function logout() {
 // 获取验证码
 export function getCodeImg() {
   return request({
-    url: '/auth/code',
+    // url: '/auth/code',
+	url: '/get/file/getVerifyCodeImage',
     headers: {
       isToken: false
     },
     method: 'get',
-    timeout: 20000
+    timeout: 20000,
+    responseType: 'arraybuffer' // 添加响应类型
   })
 }
 

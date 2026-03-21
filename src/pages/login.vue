@@ -81,7 +81,6 @@
                   <uni-icons class="input-icon" type="text" size="20" color="#666"></uni-icons>
                   <input
                     v-model="loginForm.code"
-                    type="number"
                     class="elegant-input"
                     placeholder="验证码"
                     @focus="isCodeFocused = true"
@@ -207,6 +206,7 @@ const range = ref([]);
 function getCode() {
   getCodeImg().then(res => {
     const { data } = res;
+	console.log("图形验证码",data);
     captchaEnabled.value = data.captchaEnabled !== false;
 
     if (captchaEnabled.value) {
@@ -404,7 +404,7 @@ function closeConfigPopup() {
 // 组件挂载时初始化
 onMounted(() => {
   // 暂时注释掉获取验证码和租户列表的请求
-  // getCode();
+  getCode();//获取图形验证码
   // getTenant();
 });
 </script>
@@ -447,12 +447,12 @@ page {
 }
 
 .brand-section {
-  flex: 0 0 380rpx;
-  background: linear-gradient(135deg, #1890ff 0%, #096dd9 100%);
+  flex: 0 0 280rpx;
+  background: linear-gradient(135deg, #1890ff 0%, #40a9ff 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 60rpx;
+  padding: 40rpx;
 }
 
 .brand-container {
@@ -483,9 +483,9 @@ page {
 .form-section {
   flex: 1;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  padding: 80rpx;
+  padding: 40rpx 80rpx 40rpx 80rpx;
 }
 
 .form-container {
@@ -493,7 +493,7 @@ page {
 }
 
 .form-header {
-  margin-bottom: 60rpx;
+  margin-bottom: 30rpx;
   text-align: center;
 }
 
@@ -505,7 +505,7 @@ page {
 }
 
 .form-item {
-  margin-bottom: 32rpx;
+  margin-bottom: 24rpx;
 }
 
 .input-wrapper {

@@ -18,7 +18,9 @@ export interface RequestConfig extends BaseRequestConfig {
     /** 重新设置baseUrl */
     baseUrl?: string,
     /** 请求体参数 */
-    data?: any
+    data?: any,
+    /** 响应类型 */
+    responseType?: string
 }
 
 export interface RequestUploadConfig extends BaseRequestConfig {

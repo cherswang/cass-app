@@ -7,6 +7,7 @@
     "transformPx" : false,
     /* 5+App特有相关 */
     "app-plus" : {
+        "usesCleartextTraffic" : true, // 就加在这里
         "usingComponents" : true,
         "nvueStyleCompiler" : "uni-app",
         "compilerVersion" : 3,
@@ -42,8 +43,14 @@
                     "<uses-permission android:name=\"android.permission.WAKE_LOCK\"/>",
                     "<uses-permission android:name=\"android.permission.FLASHLIGHT\"/>",
                     "<uses-feature android:name=\"android.hardware.camera\"/>",
-                    "<uses-permission android:name=\"android.permission.WRITE_SETTINGS\"/>"
-                ]
+                    "<uses-permission android:name=\"android.permission.WRITE_SETTINGS\"/>",
+                    "<uses-permission android:name=\"android.permission.ACCESS_FINE_LOCATION\"/>",
+                    "<uses-permission android:name=\"android.permission.ACCESS_COARSE_LOCATION\"/>",
+                    "<uses-permission android:name=\"android.permission.ACCESS_BACKGROUND_LOCATION\"/>"
+                ],
+                "minSdkVersion" : 21,
+                "targetSdkVersion" : 34,
+                "abiFilters" : [ "armeabi-v7a", "arm64-v8a" ]
             },
             /* ios打包配置 */
             "ios" : {
@@ -58,7 +65,7 @@
                         "name" : "amapn1kDJ538",
                         "__platform__" : [ "android" ],
                         "appkey_ios" : "",
-                        "appkey_android" : "8153741a69858f7d927d44fac746b0c4"
+                        "appkey_android" : "afce416b6bbe2ba946affdf21568c134"
                     },
                     "system" : {
                         "__platform__" : [ "ios", "android" ]

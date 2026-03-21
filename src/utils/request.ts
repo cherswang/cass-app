@@ -66,7 +66,8 @@ const request = <T>(config:RequestConfig):Promise<ResponseData<T>> => {
       url: requestUrl,
       data: requestData,
       header: config.header,
-      dataType: 'json'
+      dataType: config.responseType === 'arraybuffer' ? 'arraybuffer' : 'json',
+      responseType: config.responseType === 'arraybuffer' ? 'arraybuffer' : 'text'
     }).then(response => {
       // 检查response是否是数组
       let error, res;
@@ -77,39 +78,70 @@ const request = <T>(config:RequestConfig):Promise<ResponseData<T>> => {
         error = null;
         res = response;
       }
+      
+      // 打印完整的响应对象
+      console.log('📥 完整响应对象:', res);
       if (error) {
         toast('后端接口连接异常')
         reject('后端接口连接异常')
         return
       }
-      const data:ResponseData<T> = res.data as ResponseData<T>
       
       console.log('📥 ====== 响应开始 ======');
       console.log('📥 请求地址:', requestUrl);
       console.log('📥 响应状态码:', res.statusCode);
-      console.log('📥 响应数据:', data);
-      console.log('📥 ====== 响应结束 ======');
       
-      const code = data.code || 200
-      // @ts-ignore
-      const msg:string = errorCode[code] || data.msg || errorCode['default']
-      if (code === 401) {
-        showConfirm('登录状态已过期，您可以继续留在该页面，或者重新登录?').then(res => {
-          if (res.confirm) {
-            store.dispatch('LogOut').then(res => {
-              uni.reLaunch({ url: '/pages/login' })
-            })
+      // 处理arraybuffer类型的响应
+      if (config.responseType === 'arraybuffer') {
+        // 检查res.data是否存在
+        console.log('📥 ArrayBuffer长度:', res.data ? res.data.byteLength : 0);
+        
+        // 将arraybuffer转换为base64
+        let base64 = '';
+        if (res.data) {
+          base64 = uni.arrayBufferToBase64(res.data);
+          console.log('📥 Base64长度:', base64.length);
+        }
+        
+        console.log('📥 响应数据: [ArrayBuffer]');
+        console.log('📥 ====== 响应结束 ======');
+        
+        // 构造验证码响应数据
+        const captchaData = {
+          code: 200,
+          data: {
+            captchaEnabled: true,
+            img: base64,
+            uuid: 'captcha-' + Date.now() // 生成临时uuid
           }
-        })
-        reject('无效的会话，或者会话已过期，请重新登录。')
-      } else if (code === 500) {
-        // toast(msg)
-        reject({ code, msg })
-      } else if (code !== 200 && code !== 100) {
-        toast(msg)
-        reject({ code, msg })
+        };
+        resolve(captchaData as ResponseData<T>);
+      } else {
+        const data:ResponseData<T> = res.data as ResponseData<T>
+        console.log('📥 响应数据:', data);
+        console.log('📥 ====== 响应结束 ======');
+        
+        const code = data.code || 200
+        // @ts-ignore
+        const msg:string = errorCode[code] || data.msg || errorCode['default']
+        if (code === 401) {
+          showConfirm('登录状态已过期，您可以继续留在该页面，或者重新登录?').then(res => {
+            if (res.confirm) {
+              store.dispatch('LogOut').then(res => {
+                uni.reLaunch({ url: '/pages/login' })
+              })
+            }
+          })
+          reject('无效的会话，或者会话已过期，请重新登录。')
+        } else if (code === 500) {
+          // toast(msg)
+          reject({ code, msg })
+        } else if (code !== 200 && code !== 100) {
+          toast(msg)
+          reject({ code, msg })
+        }
+        resolve(data)
       }
-      resolve(data)
     })
       .catch(error => {
         console.log('❌ ====== 请求错误 ======');

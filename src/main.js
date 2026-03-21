@@ -27,6 +27,24 @@ export function createApp() {
     ]
   }
 
+  // 添加uni.getSetting的兼容实现，避免真机报错
+  if (!uni.getSetting) {
+    uni.getSetting = function(options) {
+      if (options && options.success) {
+        options.success({ authSetting: {} });
+      }
+    };
+  }
+
+  // 添加uni.authorize的兼容实现
+  if (!uni.authorize) {
+    uni.authorize = function(options) {
+      if (options && options.success) {
+        options.success();
+      }
+    };
+  }
+
   return {
     app
   }

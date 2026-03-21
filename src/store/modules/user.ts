@@ -57,6 +57,13 @@ const user: Module<UserState, UserState> = {
           console.log("Login API response:", res)
           const data = res;
 
+          // 检查登录是否成功，只有code为200时才认为登录成功
+          if (data.code !== 200) {
+            console.error("Login failed:", data.message || '登录失败');
+            reject(data);
+            return;
+          }
+
           // 支持多种token字段名
           const token = data.access_token || data.token || data.data?.token;
           console.log("Extracted token:", token)
@@ -66,7 +73,10 @@ const user: Module<UserState, UserState> = {
             commit('SET_TOKEN', token)
           } else {
             console.warn("No token found in response:", data)
+            reject({ code: 100, message: '登录失败：未获取到token' });
+            return;
           }
+          
           console.log("登录用户信息为：",data.data);
           
           // 保存用户信息到本地存储和store中
@@ -106,6 +116,10 @@ const user: Module<UserState, UserState> = {
               userid: userInfo.accountId,
               avatar: avatar
             });
+          } else {
+            console.error("No user info found in response:", data);
+            reject({ code: 100, message: '登录失败：未获取到用户信息' });
+            return;
           }
           
           resolve(data)

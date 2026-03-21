@@ -18,14 +18,13 @@
       <scroll-view 
         class="list-scroll" 
         scroll-y 
-        @refresherpulling="onRefresh" 
-        :refresher-triggered="refreshing" 
         @refresherrefresh="onRefresh" 
         @scrolltolower="onReachBottom"
         :refresher-enabled="true"
-        :refresher-threshold="150"
+        :refresher-threshold="100"
         :refresher-default-style="'black'"
         :refresher-background="'#f5f5f5'"
+        :refresher-triggered="refreshing"
       >
         <!-- 列表内容 -->
         <view v-if="approvals.length > 0" class="list-content">
@@ -403,6 +402,7 @@ export default {
 /* 滚动视图 */
 .list-scroll {
   width: 100%;
+  height: calc(100vh - 200px);
   min-height: 500px;
 }
 

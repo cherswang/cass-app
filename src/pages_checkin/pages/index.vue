@@ -138,25 +138,48 @@ export default {
     }
   },
   onLoad() {
-    // 获取登录用户信息
-    this.username = uni.getStorageSync('USER_INFO')?.userName || '用户';
-    // 获取当前时间
-    this.updateCurrentTime();
-    // 开始定位
-    this.getLocation();
-    // 获取打卡规则
-    this.getCheckinRules();
-    // 获取考勤配置
-    this.getAttendConfig();
-    // 获取打卡状态
-    this.getAttendStatusDay();
-    this.getOffWorkAttendStatusDay();
+    try {
+      // 获取登录用户信息
+      this.username = uni.getStorageSync('USER_INFO')?.userName || '用户';
+      // 获取当前时间
+      this.updateCurrentTime();
+      // 开始定位
+      this.getLocation();
+      // 获取打卡规则
+      this.getCheckinRules();
+      // 获取考勤配置
+      this.getAttendConfig();
+      // 获取打卡状态
+      this.getAttendStatusDay();
+      this.getOffWorkAttendStatusDay();
+    } catch (error) {
+      console.error('onLoad错误:', error);
+      console.error('错误堆栈:', error.stack);
+      uni.showToast({ title: '初始化失败: ' + error.message, icon: 'none' });
+    }
   },
   methods: {
     // 获取打卡规则
     getCheckinRules() {
-      if (uni.$appConfig) {
-        this.checkinRules = uni.$appConfig.checkinRules || [];
+      // 从考勤配置中提取规则
+      if (this.attendConfig) {
+        this.checkinRules = [];
+        // 添加打卡时间规则
+        if (this.attendConfig.beginTime) {
+          this.checkinRules.push(`上班时间：${this.attendConfig.beginTime}`);
+        }
+        if (this.attendConfig.endTime) {
+          this.checkinRules.push(`下班时间：${this.attendConfig.endTime}`);
+        }
+        // 添加打卡范围规则
+        if (this.attendConfig.address) {
+          this.checkinRules.push(`打卡地点：${this.attendConfig.address}`);
+        }
+        if (this.attendConfig.disc) {
+          this.checkinRules.push(`打卡范围：${this.attendConfig.disc}米`);
+        }
+      } else {
+        this.checkinRules = [];
       }
     },
     // 显示打卡规则
@@ -222,9 +245,18 @@ export default {
     },
     // 获取当前位置
     getLocation() {
+      // 直接获取位置，避免使用可能不存在的uni.getSetting和uni.authorize
+      console.log('直接获取位置');
+      this.doGetLocation();
+    },
+    // 执行获取位置操作
+    doGetLocation() {
       uni.getLocation({
         type: 'gcj02',
+        altitude: true,
+        accuracy: 'high',
         success: (res) => {
+          console.log('获取位置成功:', res);
           this.currentLocation = {
             latitude: res.latitude,
             longitude: res.longitude
@@ -234,7 +266,7 @@ export default {
         },
         fail: (err) => {
           console.error('获取位置失败:', err);
-          uni.showToast({ title: '获取位置失败', icon: 'none' });
+          uni.showToast({ title: '获取位置失败: ' + (err.errMsg || '未知错误'), icon: 'none' });
         }
       });
     },
@@ -271,6 +303,8 @@ export default {
             
             // 从考勤配置中提取打卡时间规则
             this.extractCheckinTimeRules(res.data);
+            // 获取打卡规则
+            this.getCheckinRules();
           } else {
             uni.showToast({ title: '请联系管理员正确设置个人考勤规则', icon: 'none' });
           }
