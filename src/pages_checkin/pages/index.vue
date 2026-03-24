@@ -35,7 +35,7 @@
         <text class="btn-time">{{ currentTime }}</text>
       </view>
 	  <view class="checkin-tip">
-	    <text class="tip-text current-location">{{ addressInfo }}</text>
+	    <text class="tip-text current-location">{{ addressInfo || '获取位置中...' }}</text>
 	  </view>
 	  <view class="checkin-tip">
 	    <text class="tip-icon">📍</text>
@@ -273,10 +273,16 @@ export default {
     // 获取地址信息
     getAddressInfo(latitude, longitude) {
       uni.request({
-        url: `https://apis.map.qq.com/ws/geocoder/v1/?location=${latitude},${longitude}&key=OB4BZ-D4W3U-B7VVO-4PJWW-6TKDJ-WPB77`,
+        url: "https://restapi.amap.com/v3/geocode/regeo",
+        data: {
+          location: longitude + "," + latitude, // 高德：先经度
+          key: "8153741a69858f7d927d44fac746b0c4", // 你自己的高德Web服务Key
+          extensions: "base"
+        },
         success: (res) => {
-          if (res.data.status === 0) {
-            this.addressInfo = res.data.result.address;
+			console.log("高德地址解析成功：", res.data);
+          if (res.data.status == "1") {
+            this.addressInfo = res.data.regeocode.formatted_address;
           }
         }
       });

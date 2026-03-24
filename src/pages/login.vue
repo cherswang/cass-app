@@ -97,6 +97,18 @@
               <span>{{ errorMessage }}</span>
             </view>
 
+            <!-- 记住密码 -->
+            <view class="remember-area">
+              <label class="remember-label">
+                <checkbox 
+                  :checked="rememberMe" 
+                  @click="rememberMe = !rememberMe"
+                  color="#1890ff"
+                />
+                <text>记住我</text>
+              </label>
+            </view>
+
             <!-- 操作区域 -->
             <view class="form-actions">
               <button
@@ -318,6 +330,17 @@ async function handlePrint() {
 // 登录成功处理
 async function loginSuccess() {
   try {
+    // 保存用户信息到本地存储
+    if (rememberMe.value) {
+      uni.setStorageSync('REMEMBER_ME', true);
+      uni.setStorageSync('ACCOUNT_ID', loginForm.accountId);
+      uni.setStorageSync('PASS_WORD', loginForm.password);
+    } else {
+      uni.removeStorageSync('REMEMBER_ME');
+      uni.removeStorageSync('ACCOUNT_ID');
+      uni.removeStorageSync('PASS_WORD');
+    }
+
     // uni.showToast({
     //   title: '登录成功',
     //   icon: 'success',
@@ -403,24 +426,46 @@ function closeConfigPopup() {
 
 // 组件挂载时初始化
 onMounted(() => {
+  // 检查是否记住了密码
+  const rememberMeFlag = uni.getStorageSync('REMEMBER_ME');
+  if (rememberMeFlag) {
+    rememberMe.value = true;
+    loginForm.accountId = uni.getStorageSync('ACCOUNT_ID') || '';
+    loginForm.password = uni.getStorageSync('PASS_WORD') || '';
+  }
+  
   // 暂时注释掉获取验证码和租户列表的请求
   getCode();//获取图形验证码
   // getTenant();
+  
+  // 监听键盘事件
+  uni.onKeyboardHeightChange((res) => {
+    if (res.height > 0) {
+      // 键盘弹出，延迟一点时间让页面稳定
+      setTimeout(() => {
+        // 滚动到当前聚焦的输入框位置
+        const activeElement = document.activeElement;
+        if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA')) {
+          activeElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 100);
+    }
+  });
 });
 </script>
 
 <style lang="scss">
 page {
-  height: 100vh;
+  min-height: 100vh;
   background: #fafbfc;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
-  overflow: hidden;
 }
 
 .login-page {
   width: 100vw;
-  height: 100vh;
+  min-height: 100vh;
   display: flex;
+  flex-direction: column;
 }
 
 .bg-simple {
@@ -443,7 +488,8 @@ page {
   z-index: 1;
   width: 100%;
   background: #fff;
-  overflow: hidden;
+  flex: 1;
+  overflow-y: auto;
 }
 
 .brand-section {
@@ -485,7 +531,8 @@ page {
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding: 40rpx 80rpx 40rpx 80rpx;
+  padding: 40rpx 40rpx 60rpx 40rpx;
+  min-height: 400rpx;
 }
 
 .form-container {
@@ -638,6 +685,7 @@ page {
 
 .form-actions {
   margin-top: 48rpx;
+  margin-bottom: 20rpx;
 }
 
 .remember-area {
@@ -651,6 +699,23 @@ page {
   font-size: 24rpx;
   color: #666;
   cursor: pointer;
+}
+
+.checkbox {
+  width: 32rpx;
+  height: 32rpx;
+  border: 1rpx solid #d9d9d9;
+  border-radius: 4rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+  background: white;
+}
+
+.checkbox.checked {
+  border-color: #1890ff;
+  background: #e6f7ff;
 }
 
 .login-btn {

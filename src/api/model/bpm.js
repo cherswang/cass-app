@@ -80,6 +80,39 @@ export default {
             params: params
           });
         }
+      },
+      deleteDraftsBpmFlow: {
+        url: `/set/bpm/deleteDraftsBpmFlow`,
+        name: "删除草稿",
+        post: async function (data) {
+          return await http({
+            url: this.url,
+            method: 'POST',
+            data: data
+          });
+        }
+      },
+      doBpmUrge: {
+        url: `/set/bpm/doBpmUrge`,
+        name: "催办流程",
+        post: async function (data) {
+          return await http({
+            url: this.url,
+            method: 'POST',
+            data: data
+          });
+        }
+      },
+      getDraftsBpmFlowListFilter: {
+        url: `/get/bpm/getDraftsBpmFlowListFilter`,
+        name: "获取草稿流程分类",
+        get: async function (params) {
+          return await http({
+            url: this.url,
+            method: 'GET',
+            params: params
+          });
+        }
       }
     },
     bpmSort: {
@@ -98,7 +131,18 @@ export default {
     bpmFlow: {
       getEndBpmFlowList: {
         url: `/get/bpm/getEndBpmFlowList`,
-        name: "获取当用户参与的流程列表",
+        name: "获取流程分类列表",
+        get: async function (params) {
+          return await http({
+            url: this.url,
+            method: 'GET',
+            params: params
+          });
+        }
+      },
+      getMyEndBpmFlowList: {
+        url: `/get/bpm/getMyEndBpmFlowList`,
+        name: "获取已结束流程列表",
         get: async function (params) {
           return await http({
             url: this.url,
@@ -109,7 +153,18 @@ export default {
       },
       getSendToBpmFlowList: {
         url: `/get/bpm/getSendToBpmFlowList`,
-        name: "获取当前用户抄送流程流程列表",
+        name: "获取抄送流程分类列表",
+        get: async function (params) {
+          return await http({
+            url: this.url,
+            method: 'GET',
+            params: params
+          });
+        }
+      },
+      getSendToMeBpmList: {
+        url: `/get/bpm/getSendToMeBpmList`,
+        name: "获取抄送我的流程列表",
         get: async function (params) {
           return await http({
             url: this.url,
@@ -154,6 +209,28 @@ export default {
       getDocNumByBpmFlow: {
         url: `/get/bpm/getDocNumByBpmFlow`,
         name: "获取流程信息",
+        get: async function (params) {
+          return await http({
+            url: this.url,
+            method: 'GET',
+            params: params
+          });
+        }
+      },
+      getBpmFlowListForSelect: {
+        url: `/get/bpm/getBpmFlowListForSelect`,
+        name: "获取流程分类列表",
+        get: async function (params) {
+          return await http({
+            url: this.url,
+            method: 'GET',
+            params: params
+          });
+        }
+      },
+      getPendingBpmFlowList: {
+        url: `/get/bpm/getPendingBpmFlowList`,
+        name: "获取处理中流程分类列表",
         get: async function (params) {
           return await http({
             url: this.url,
@@ -230,6 +307,42 @@ export default {
             data: data
           });
         }
+      },
+      changeBpmStepRunUser: {
+        url: `/set/bpm/changeBpmStepRunUser`,
+        name: "委托流程处理人",
+        post: async function (data, config) {
+          return await http({
+            url: this.url,
+            method: 'POST',
+            data: data,
+            ...config
+          });
+        }
+      },
+      remindBpmStepRun: {
+        url: `/set/bpm/remindBpmStepRun`,
+        name: "催办流程",
+        post: async function (data) {
+          return await http({
+            url: this.url,
+            method: 'POST',
+            data: data
+          });
+        }
+      }
+    },
+    bpmDelegate: {
+      getDelegateUserList: {
+        url: `/get/bpm/getDelegateUserList`,
+        name: "获取可委托用户列表",
+        get: async function (params) {
+          return await http({
+            url: this.url,
+            method: 'GET',
+            params: params
+          });
+        }
       }
     },
     bpmCollect: {
@@ -252,6 +365,17 @@ export default {
             url: this.url,
             method: 'GET',
             params: params
+          });
+        }
+      },
+      removeBpmCollect: {
+        url: `/set/bpm/removeBpmCollect`,
+        name: "取消收藏流程",
+        post: async function (data) {
+          return await http({
+            url: this.url,
+            method: 'POST',
+            data: data
           });
         }
       }

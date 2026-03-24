@@ -26,13 +26,13 @@
             "color" : "#000000"
         },
         "buttonAccept" : {
-            "color" : "#00aaff"
+            "color" : "#000000"
         },
         "buttonRefuse" : {
-            "color" : "#ff0000"
+            "color" : "#b7b7b7"
         },
         "buttonVisitor" : {
-            "color" : "#00aaff"
+            "color" : "#000000"
         }
     }
 }
