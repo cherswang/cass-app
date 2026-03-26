@@ -92,6 +92,20 @@ export default {
           });
         }
       },
+      deleteLogicBpm: {
+        url: `/set/bpm/deleteLogicBpm`,
+        name: "删除流程",
+        post: async function (data) {
+          return await http({
+            url: this.url,
+            method: 'POST',
+            data: data,
+            header: {
+              'Content-Type': 'application/x-www-form-urlencoded'
+            }
+          });
+        }
+      },
 
       getDraftsBpmFlowListFilter: {
         url: `/get/bpm/getDraftsBpmFlowListFilter`,

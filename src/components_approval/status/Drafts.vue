@@ -69,7 +69,8 @@
               </view>
               <view class="item-footer">
                 <view class="btn-container">
-                  <button class="edit-btn" @click.stop="navigateToDetail(item)">编辑</button>
+                  <button class="view-btn" @click.stop="navigateToDetail(item)">查看</button>
+                  <button class="handle-btn" @click.stop="navigateToHandle(item)">办理</button>
                   <button class="delete-btn" @click.stop="handleDeleteDraft(item)">删除</button>
                 </view>
               </view>
@@ -244,6 +245,32 @@ export default {
       })
     },
     
+    // 跳转到办理页
+    navigateToHandle(item) {
+      console.log('办理:', item)
+      console.log('runId:', item.runId, 'stepRunId:', item.stepRunId, 'flowId:', item.flowId)
+      
+      if (!item.runId || !item.stepRunId || !item.flowId) {
+        console.error('缺少必要的参数:', item)
+        uni.showToast({ title: '缺少必要的参数', icon: 'none' })
+        return
+      }
+      
+      const url = `/pages_approval/pages/handle/index?runId=${item.runId}&stepRunId=${item.stepRunId}&flowId=${item.flowId}&flowTitle=${encodeURIComponent(item.flowTitle || '')}&urgency=${item.urgency || '0'}&opType=handle`
+      console.log('跳转URL:', url)
+      
+      uni.navigateTo({
+        url: url,
+        success: function(res) {
+          console.log('跳转成功:', res)
+        },
+        fail: function(err) {
+          console.error('跳转失败:', err)
+          uni.showToast({ title: '跳转失败', icon: 'none' })
+        }
+      })
+    },
+    
     // 处理删除草稿
     async handleDeleteDraft(item) {
       uni.showModal({
@@ -252,8 +279,8 @@ export default {
         success: async (res) => {
           if (res.confirm) {
             try {
-              const deleteRes = await API.bpm.bpmList.deleteDraftsBpmFlow.post({
-                id: item.id
+              const deleteRes = await API.bpm.bpmList.deleteLogicBpm.post({
+                runId: item.runId
               })
               
               if (deleteRes.code === 200) {
@@ -458,8 +485,8 @@ export default {
   font-size: 0; /* 消除inline-block元素间的空格 */
 }
 
-/* 编辑按钮 */
-.edit-btn {
+/* 查看按钮 */
+.view-btn {
   display: inline-block;
   margin-right: 10px;
   margin-bottom: 10px;
@@ -477,8 +504,31 @@ export default {
   box-sizing: border-box;
 }
 
-.edit-btn:active {
+.view-btn:active {
   background-color: #40a9ff;
+}
+
+/* 办理按钮 */
+.handle-btn {
+  display: inline-block;
+  margin-right: 10px;
+  margin-bottom: 10px;
+  vertical-align: middle;
+  background-color: #52c41a;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0 14px;
+  font-size: 13px;
+  cursor: pointer;
+  height: 32px;
+  line-height: 32px;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.handle-btn:active {
+  background-color: #73d13d;
 }
 
 /* 删除按钮 */
