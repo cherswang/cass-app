@@ -1,9 +1,9 @@
 <template>
   <view class="approval-detail-container">
     <view class="detail-header">
-      <text class="detail-title">{{ approvalDetail.flowTitle || approvalDetail.title }}</text>
-      <text class="detail-status" :class="getStatusClass(approvalDetail.status)">
-        {{ getStatusText(approvalDetail.status) }}
+      <text class="detail-title">{{ bpmList.flowTitle || '流程详情' }}</text>
+      <text class="detail-status" :class="getStatusClass(bpmList.status)">
+        {{ getStatusText(bpmList.status) }}
       </text>
     </view>
     <view class="detail-body">
@@ -11,68 +11,134 @@
         <text class="section-title">基本信息</text>
         <view class="info-item">
           <text class="info-label">流程名称：</text>
-          <text class="info-value">{{ approvalDetail.flowName }}</text>
+          <text class="info-value">{{ bpmList.flowName || '未知流程' }}</text>
         </view>
         <view class="info-item">
-          <text class="info-label">步骤名称：</text>
-          <text class="info-value">{{ approvalDetail.stepName }}</text>
+          <text class="info-label">流水号：</text>
+          <text class="info-value">{{ bpmList.id || '' }}</text>
         </view>
         <view class="info-item">
           <text class="info-label">提交人：</text>
-          <text class="info-value">{{ approvalDetail.createUser || approvalDetail.submitter }}</text>
+          <text class="info-value">{{ bpmList.createUser || '未知' }}</text>
         </view>
         <view class="info-item">
           <text class="info-label">提交时间：</text>
-          <text class="info-value">{{ approvalDetail.createTime || approvalDetail.submitTime }}</text>
-        </view>
-        <view class="info-item" v-if="approvalDetail.recTime">
-          <text class="info-label">接收时间：</text>
-          <text class="info-value">{{ approvalDetail.recTime }}</text>
+          <text class="info-value">{{ bpmList.createTime || '' }}</text>
         </view>
         <view class="info-item">
           <text class="info-label">紧急程度：</text>
-          <text class="info-value">{{ getUrgencyText(approvalDetail.urgency) }}</text>
-        </view>
-        <view class="info-item">
-          <text class="info-label">办理时限：</text>
-          <text class="info-value">{{ getPassTimeText(approvalDetail.passTime) }}</text>
+          <text class="info-value">{{ getUrgencyText(bpmList.urgency) }}</text>
         </view>
       </view>
       <view class="detail-section">
         <text class="section-title">审批内容</text>
         <view class="content-box">
-          <text class="content-text">{{ approvalDetail.content || '暂无内容' }}</text>
-        </view>
-      </view>
-      <view class="detail-section" v-if="approvalDetail.attachments && approvalDetail.attachments.length > 0">
-        <text class="section-title">附件</text>
-        <view class="attachment-list">
-          <view class="attachment-item" v-for="(attachment, index) in approvalDetail.attachments" :key="index">
-            <up-icon name="document" size="24" color="#1890ff"></up-icon>
-            <text class="attachment-name">{{ attachment.name }}</text>
-            <text class="attachment-size">{{ attachment.size }}</text>
+          <text v-if="loading">加载中...</text>
+          <view v-else>
+            <!-- 解析并显示表单数据 -->
+            <view v-if="formJson && formJson.widgetList" class="form-fields">
+              <view class="form-rows">
+                <view v-for="(widget, index) in formJson.widgetList" :key="widget.id || index">
+                  <!-- 处理表格类型：将所有元素提取出来，按照从上到下的顺序排列 -->
+                  <template v-if="widget.type === 'table' && widget.rows">
+                    <view v-for="(row, rowIndex) in widget.rows" :key="row.id || rowIndex">
+                      <view v-for="(col, colIndex) in row.cols" :key="col.id || colIndex">
+                        <view v-for="(subWidget, subIndex) in (col.widgetList || [])" :key="subWidget.id || subIndex">
+                          <!-- 处理日期类型 -->
+                          <template v-if="(subWidget.type === 'date' || subWidget.type === 'date-range') && subWidget.formItemFlag !== false && subWidget.options">
+                            <view class="form-field">
+                              <text class="field-label">{{ subWidget.options.label || subWidget.options.name || '' }}：</text>
+                              <view class="field-input">
+                                <text class="field-value">{{ subWidget.options.defaultValue ? (subWidget.type === 'date-range' ? subWidget.options.defaultValue.join(' ~ ') : subWidget.options.defaultValue) : '无' }}</text>
+                              </view>
+                            </view>
+                          </template>
+                          <!-- 处理输入框类型 -->
+                          <template v-else-if="subWidget.type === 'input' && subWidget.formItemFlag !== false && subWidget.options">
+                            <view class="form-field">
+                              <text class="field-label">{{ subWidget.options.label || subWidget.options.name || '' }}：</text>
+                              <view class="field-input">
+                                <text class="field-value">{{ subWidget.options.defaultValue || '无' }}</text>
+                              </view>
+                            </view>
+                          </template>
+                          <!-- 处理其他类型 -->
+                          <template v-else>
+                            <view v-html="renderWidget(subWidget)"></view>
+                          </template>
+                        </view>
+                      </view>
+                    </view>
+                  </template>
+                  <!-- 处理网格类型：将所有元素提取出来，按照从上到下的顺序排列 -->
+                  <template v-else-if="widget.type === 'grid' && widget.cols">
+                    <view v-for="(col, colIndex) in widget.cols" :key="col.id || colIndex">
+                      <view v-for="(subWidget, subIndex) in (col.widgetList || [])" :key="subWidget.id || subIndex">
+                        <!-- 处理日期类型 -->
+                        <template v-if="(subWidget.type === 'date' || subWidget.type === 'date-range') && subWidget.formItemFlag !== false && subWidget.options">
+                          <view class="form-field">
+                            <text class="field-label">{{ subWidget.options.label || subWidget.options.name || '' }}：</text>
+                            <view class="field-input">
+                              <text class="field-value">{{ subWidget.options.defaultValue ? (subWidget.type === 'date-range' ? subWidget.options.defaultValue.join(' ~ ') : subWidget.options.defaultValue) : '无' }}</text>
+                            </view>
+                          </view>
+                        </template>
+                        <!-- 处理输入框类型 -->
+                        <template v-else-if="subWidget.type === 'input' && subWidget.formItemFlag !== false && subWidget.options">
+                          <view class="form-field">
+                            <text class="field-label">{{ subWidget.options.label || subWidget.options.name || '' }}：</text>
+                            <view class="field-input">
+                              <text class="field-value">{{ subWidget.options.defaultValue || '无' }}</text>
+                            </view>
+                          </view>
+                        </template>
+                        <!-- 处理其他类型 -->
+                        <template v-else>
+                          <view v-html="renderWidget(subWidget)"></view>
+                        </template>
+                      </view>
+                    </view>
+                  </template>
+                  <!-- 处理其他类型 -->
+                  <template v-else>
+                    <!-- 处理日期类型 -->
+                    <template v-if="(widget.type === 'date' || widget.type === 'date-range') && widget.formItemFlag !== false && widget.options">
+                      <view class="form-field">
+                        <text class="field-label">{{ widget.options.label || widget.options.name || '' }}：</text>
+                        <view class="field-input">
+                          <text class="field-value">{{ widget.options.defaultValue ? (widget.type === 'date-range' ? widget.options.defaultValue.join(' ~ ') : widget.options.defaultValue) : '无' }}</text>
+                        </view>
+                      </view>
+                    </template>
+                    <!-- 处理输入框类型 -->
+                    <template v-else-if="widget.type === 'input' && widget.formItemFlag !== false && widget.options">
+                      <view class="form-field">
+                        <text class="field-label">{{ widget.options.label || widget.options.name || '' }}：</text>
+                        <view class="field-input">
+                          <text class="field-value">{{ widget.options.defaultValue || '无' }}</text>
+                        </view>
+                      </view>
+                    </template>
+                    <!-- 处理其他类型 -->
+                    <template v-else>
+                      <view v-html="renderWidget(widget)"></view>
+                    </template>
+                  </template>
+                </view>
+              </view>
+            </view>
+            <text v-else>暂无表单数据</text>
           </view>
         </view>
       </view>
-      <view class="detail-section" v-if="approvalDetail.status === 'processed'">
-        <text class="section-title">处理结果</text>
-        <view class="result-item">
-          <text class="result-label">处理状态：</text>
-          <text class="result-value">{{ approvalDetail.result }}</text>
-        </view>
-        <view class="result-item">
-          <text class="result-label">处理时间：</text>
-          <text class="result-value">{{ approvalDetail.processTime }}</text>
-        </view>
-        <view class="result-item">
-          <text class="result-label">处理意见：</text>
-          <text class="result-value">{{ approvalDetail.comment }}</text>
+      <view class="detail-section" v-if="bpmList.runAttach">
+        <text class="section-title">附件</text>
+        <view class="attachment-list">
+          <view class="attachment-item">
+            <text class="attachment-name">{{ bpmList.runAttach }}</text>
+          </view>
         </view>
       </view>
-    </view>
-    <view class="detail-footer" v-if="approvalDetail.status === 'pending' || !approvalDetail.status">
-      <button class="btn-reject" @click="handleReject">拒绝</button>
-      <button class="btn-approve" @click="handleApprove">批准</button>
     </view>
   </view>
 </template>
@@ -83,22 +149,22 @@ import API from '@/api'
 export default {
   data() {
     return {
-      approvalDetail: {
+      // 加载状态
+      loading: true,
+      // 流程信息
+      bpmList: {
+        id: '',
+        runId: '',
+        flowId: '',
         flowTitle: '',
-        flowName: '',
-        stepName: '',
         createUser: '',
         createTime: '',
-        recTime: '',
-        urgency: 0,
-        passTime: 0,
-        content: '',
+        urgency: '0',
         status: '',
-        attachments: [],
-        result: '',
-        processTime: '',
-        comment: ''
+        runAttach: ''
       },
+      // 表单信息
+      formJson: null,
       params: {
         runId: '',
         stepRunId: '',
@@ -124,80 +190,95 @@ export default {
       
       try {
         // 调用获取审批详情的API
-        const res = await API.bpm.bpmStepRun.getBpmFlowDetail.get({
-          runId: this.params.runId,
-          stepRunId: this.params.stepRunId,
-          flowId: this.params.flowId
+        const res = await API.bpm.bpmForm.getBpmFormDetailsByRunId.get({
+          runId: this.params.runId
         })
+        
+        console.log('获取审批详情响应:', res)
         
         if (res.code === 200) {
           // 解析返回的数据
           const data = res.data || {}
-          this.approvalDetail = {
-            flowTitle: data.flowTitle || data.title || '',
-            flowName: data.flowName || '',
-            stepName: data.stepName || '',
-            createUser: data.createUser || data.submitter || '',
-            createTime: data.createTime || data.submitTime || '',
-            recTime: data.recTime || '',
-            urgency: data.urgency || 0,
-            passTime: data.passTime || 0,
-            content: data.content || '暂无内容',
-            status: data.status || '',
-            attachments: data.attachments || [],
-            result: data.result || '',
-            processTime: data.processTime || '',
-            comment: data.comment || ''
-          }
+          this.bpmList = data.bpmList || this.bpmList
+          this.formJson = data.formJson || null
         } else {
           uni.showToast({ title: res.message || '获取详情失败', icon: 'none' })
+          // 即使失败，也设置为空对象，避免页面崩溃
+          this.formJson = null
         }
       } catch (error) {
         console.error('获取审批详情失败:', error)
-        uni.showToast({ title: '获取详情失败', icon: 'none' })
+        uni.showToast({ title: error.msg || '获取详情失败', icon: 'none' })
+        // 即使出错，也设置为空对象，避免页面崩溃
+        this.formJson = null
+      } finally {
+        this.loading = false
       }
     },
-    // 批准
-    handleApprove() {
-      uni.showModal({
-        title: '批准',
-        content: '确定要批准该申请吗？',
-        success: (res) => {
-          if (res.confirm) {
-            // 这里应该调用批准API
-            uni.showToast({
-              title: '批准成功',
-              icon: 'success'
-            })
-            setTimeout(() => {
-              uni.navigateBack()
-            }, 1500)
-          }
+    // 渲染单个组件
+    renderWidget(widget) {
+      if (!widget) return ''
+      
+      // 处理容器类型组件
+      if (widget.category === 'container') {
+        // 网格和表格类型已经在模板中处理，这里跳过
+        if (widget.type === 'grid' || widget.type === 'table') {
+          return ''
         }
-      })
-    },
-    // 拒绝
-    handleReject() {
-      uni.showModal({
-        title: '拒绝',
-        content: '确定要拒绝该申请吗？',
-        success: (res) => {
-          if (res.confirm) {
-            // 这里应该调用拒绝API
-            uni.showToast({
-              title: '拒绝成功',
-              icon: 'success'
-            })
-            setTimeout(() => {
-              uni.navigateBack()
-            }, 1500)
-          }
+        
+        // 处理其他容器类型
+        if (widget.widgetList) {
+          return widget.widgetList.map((subWidget, subIndex) => {
+            return this.renderWidget(subWidget)
+          }).join('')
         }
-      })
+      }
+      
+      // 处理字段类型组件
+      if (widget.formItemFlag !== false) {
+        const label = widget.options ? (widget.options.label || widget.options.name || '') : ''
+        let value = ''
+        
+        if (widget.type === 'input' && widget.options && widget.options.name) {
+          if (widget.options.type === 'text') {
+            value = widget.options.defaultValue || ''
+            return `<view class="form-field"><text class="field-label">${label}：</text><view class="field-input"><text class="field-value">${value || '无'}</text></view></view>`
+          } else if (widget.options.type === 'textarea') {
+            value = widget.options.defaultValue || ''
+            return `<view class="form-field"><text class="field-label">${label}：</text><view class="field-input"><text class="field-value">${value || '无'}</text></view></view>`
+          }
+        } else if (widget.type === 'date-range' && widget.options && widget.options.name) {
+          value = widget.options.defaultValue ? widget.options.defaultValue.join(' ~ ') : ''
+          return `<view class="form-field"><text class="field-label">${label}：</text><view class="field-input"><text class="field-value">${value || '无'}</text></view></view>`
+        } else if (widget.type === 'date' && widget.options && widget.options.name) {
+          value = widget.options.defaultValue || ''
+          return `<view class="form-field"><text class="field-label">${label}：</text><view class="field-input"><text class="field-value">${value || '无'}</text></view></view>`
+        } else {
+          value = widget.options ? widget.options.defaultValue || '' : ''
+          return `<view class="form-field"><text class="field-label">${label}：</text><view class="field-input"><text class="field-value">${value || '无'}</text></view></view>`
+        }
+      }
+      
+      // 处理静态文本
+      if (widget.type === 'static-text') {
+        const text = widget.options ? widget.options.textContent || '' : ''
+        return `<view class="static-text-widget"><text class="static-text">${text}</text></view>`
+      }
+      
+      // 处理HTML文本
+      if (widget.type === 'html-text') {
+        const html = widget.options ? widget.options.htmlContent || '' : ''
+        return `<view class="html-text-widget"><text class="html-text">${html}</text></view>`
+      }
+      
+      // 默认空
+      return ''
     },
     // 获取状态文本
     getStatusText(status) {
       const statusMap = {
+        '0': '处理中',
+        '1': '已结束',
         pending: '待审批',
         processed: '已处理',
         approved: '已批准',
@@ -208,6 +289,8 @@ export default {
     // 获取状态样式类
     getStatusClass(status) {
       const classMap = {
+        '0': 'status-processing',
+        '1': 'status-end',
         pending: 'status-pending',
         processed: 'status-processed',
         approved: 'status-approved',
@@ -218,19 +301,11 @@ export default {
     // 获取紧急程度文本
     getUrgencyText(urgency) {
       const urgencyMap = {
-        0: '一般',
-        1: '紧急',
-        2: '加急'
+        '0': '一般',
+        '1': '紧急',
+        '2': '加急'
       }
       return urgencyMap[urgency] || '未知'
-    },
-    // 获取办理时限文本
-    getPassTimeText(passTime) {
-      if (passTime == 0) {
-        return '无限制'
-      } else {
-        return `${passTime}小时`
-      }
     }
   }
 }
@@ -414,5 +489,68 @@ export default {
   border-radius: 8px;
   font-size: 16px;
   font-weight: 500;
+}
+
+/* 表单字段样式 */
+.form-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.form-field {
+  display: flex;
+  margin-bottom: 10px;
+  align-items: flex-start;
+}
+
+.field-label {
+  width: 100px;
+  font-size: 13px;
+  color: #999;
+  flex-shrink: 0;
+}
+
+.field-input {
+  flex: 1;
+  font-size: 13px;
+  color: #262626;
+  word-break: break-word;
+}
+
+.field-value {
+  font-size: 13px;
+  color: #262626;
+  word-break: break-word;
+}
+
+.static-text-widget {
+  margin: 10px 0;
+}
+
+.static-text {
+  font-size: 13px;
+  color: #262626;
+  line-height: 1.5;
+}
+
+.html-text-widget {
+  margin: 10px 0;
+}
+
+.html-text {
+  font-size: 13px;
+  color: #262626;
+  line-height: 1.5;
+}
+
+.status-processing {
+  background: #fff7e6;
+  color: #fa8c16;
+}
+
+.status-end {
+  background: #f6ffed;
+  color: #52c41a;
 }
 </style>

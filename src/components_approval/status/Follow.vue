@@ -227,10 +227,29 @@ export default {
     
     // 跳转到详情页
     navigateToDetail(item) {
+      console.log('查看详情:', item)
+      console.log('runId:', item.runId)
+      
+      if (!item.runId) {
+        console.error('缺少必要的参数:', item)
+        uni.showToast({ title: '缺少必要的参数', icon: 'none' })
+        return
+      }
+      
+      const url = `/pages_approval/pages/detail/index?runId=${item.runId}`
+      console.log('跳转URL:', url)
+      
       uni.navigateTo({
-        url: `/pages_approval/pages/detail?runId=${item.runId}&stepRunId=${item.stepRunId}&flowId=${item.flowId}`
+        url: url,
+        success: function(res) {
+          console.log('跳转成功:', res)
+        },
+        fail: function(err) {
+          console.error('跳转失败:', err)
+          uni.showToast({ title: '跳转失败', icon: 'none' })
+        }
       })
-    }
+    },
   }
 }
 </script>

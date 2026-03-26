@@ -92,17 +92,7 @@ export default {
           });
         }
       },
-      doBpmUrge: {
-        url: `/set/bpm/doBpmUrge`,
-        name: "催办流程",
-        post: async function (data) {
-          return await http({
-            url: this.url,
-            method: 'POST',
-            data: data
-          });
-        }
-      },
+
       getDraftsBpmFlowListFilter: {
         url: `/get/bpm/getDraftsBpmFlowListFilter`,
         name: "获取草稿流程分类",
@@ -310,13 +300,24 @@ export default {
       },
       changeBpmStepRunUser: {
         url: `/set/bpm/changeBpmStepRunUser`,
-        name: "委托流程处理人",
+        name: "转交办理人",
         post: async function (data, config) {
           return await http({
             url: this.url,
             method: 'POST',
             data: data,
             ...config
+          });
+        }
+      },
+      doBpmUrge: {
+        url: `/set/bpm/doBpmUrge`,
+        name: "催办流程",
+        post: async function (data) {
+          return await http({
+            url: this.url,
+            method: 'POST',
+            data: data
           });
         }
       },
@@ -395,6 +396,17 @@ export default {
       getCreateBpmFormDataBean: {
         url: `/get/bpm/getCreateBpmFormDataBean`,
         name: "获取工作流表单-发起",
+        get: async function (params) {
+          return await http({
+            url: this.url,
+            method: 'GET',
+            params: params
+          });
+        }
+      },
+      getBpmFormDetailsByRunId: {
+        url: `/get/bpm/getBpmFormDetailsByRunId`,
+        name: "获取工作流表单详情",
         get: async function (params) {
           return await http({
             url: this.url,

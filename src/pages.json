@@ -659,6 +659,23 @@
           }
         }
       ]
+    },
+    {
+      "root": "pages_message/pages",
+      "pages": [
+        {
+          "path": "index",
+          "style": {
+            "navigationBarTitleText": "消息"
+          }
+        },
+        {
+          "path": "detail/index",
+          "style": {
+            "navigationBarTitleText": "消息详情"
+          }
+        }
+      ]
     }
   ],
   "tabBar": {
@@ -673,6 +690,12 @@
         "selectedIconPath": "static/images/tabbar/home_.png",
         "text": "应用中心"
       },
+      // {
+      //   "pagePath": "pages_message/pages/index",
+      //   "iconPath": "static/images/tabbar/work.png",
+      //   "selectedIconPath": "static/images/tabbar/work_.png",
+      //   "text": "消息"
+      // },
       {
         "pagePath": "pages/mine",
         "iconPath": "static/images/tabbar/mine.png",

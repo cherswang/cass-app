@@ -403,8 +403,27 @@ export default {
     
     // 跳转到详情页
     navigateToDetail(item) {
+      console.log('查看详情:', item)
+      console.log('runId:', item.runId)
+      
+      if (!item.runId) {
+        console.error('缺少必要的参数:', item)
+        uni.showToast({ title: '缺少必要的参数', icon: 'none' })
+        return
+      }
+      
+      const url = `/pages_approval/pages/detail/index?runId=${item.runId}`
+      console.log('跳转URL:', url)
+      
       uni.navigateTo({
-        url: `/pages_approval/pages/detail?runId=${item.runId}&stepRunId=${item.stepRunId}&flowId=${item.flowId}`
+        url: url,
+        success: function(res) {
+          console.log('跳转成功:', res)
+        },
+        fail: function(err) {
+          console.error('跳转失败:', err)
+          uni.showToast({ title: '跳转失败', icon: 'none' })
+        }
       })
     },
     
@@ -416,18 +435,36 @@ export default {
         success: async (res) => {
           if (res.confirm) {
             try {
-              // 构建催办参数
-              const remindParams = { runId: item.runId }
-              if (item.stepRunId) {
-                remindParams.stepRunId = item.stepRunId
-              }
-              const res = await API.bpm.bpmList.doBpmUrge.post(remindParams)
+              // 构建符合Vue后台要求的form-data格式参数
+              let formData = `runIds[]=${encodeURIComponent(item.runId)}`
               
-              if (res.code === 200) {
-                uni.showToast({ title: '催办成功', icon: 'success' })
-              } else {
-                uni.showToast({ title: res.message || '催办失败', icon: 'none' })
-              }
+              // 导入config获取baseURL
+              import('@/config').then(configModule => {
+                const config = configModule.default
+                // 使用uni.request直接发送请求，确保参数格式正确
+                uni.request({
+                  url: config.baseUrl + '/set/bpm/doBpmUrge',
+                  method: 'POST',
+                  header: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Authorization': uni.getStorageSync('token'),
+                    'clientid': config.clientID
+                  },
+                  data: formData,
+                  success: (res) => {
+                    console.log('催办响应:', res)
+                    if (res.data && res.data.code === 200) {
+                      uni.showToast({ title: '催办成功', icon: 'success' })
+                    } else {
+                      uni.showToast({ title: res.data?.message || '催办失败', icon: 'none' })
+                    }
+                  },
+                  fail: (error) => {
+                    console.error('催办失败:', error)
+                    uni.showToast({ title: '催办失败', icon: 'none' })
+                  }
+                })
+              })
             } catch (error) {
               console.error('催办失败:', error)
               uni.showToast({ title: '催办失败', icon: 'none' })

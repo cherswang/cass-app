@@ -53,7 +53,16 @@ const request = <T>(config:RequestConfig):Promise<ResponseData<T>> => {
         if (requestData.hasOwnProperty(key)) {
           const value = requestData[key];
           if (value !== null && value !== undefined) {
-            paramsArray.push(`${key}=${typeof value === 'object' ? JSON.stringify(value) : value}`);
+            if (Array.isArray(value)) {
+              // 对于数组类型的参数，使用key[]的格式
+              value.forEach(item => {
+                paramsArray.push(`${key}[]=${item}`);
+              });
+            } else if (typeof value === 'object') {
+              paramsArray.push(`${key}=${JSON.stringify(value)}`);
+            } else {
+              paramsArray.push(`${key}=${value}`);
+            }
           }
         }
       }

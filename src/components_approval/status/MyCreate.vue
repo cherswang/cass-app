@@ -266,15 +266,15 @@ export default {
     // 跳转到详情页
     navigateToDetail(item) {
       console.log('查看详情:', item)
-      console.log('runId:', item.runId, 'stepRunId:', item.stepRunId, 'flowId:', item.flowId)
+      console.log('runId:', item.runId)
       
-      if (!item.runId || !item.stepRunId || !item.flowId) {
+      if (!item.runId) {
         console.error('缺少必要的参数:', item)
         uni.showToast({ title: '缺少必要的参数', icon: 'none' })
         return
       }
       
-      const url = `/pages_approval/pages/detail?runId=${item.runId}&stepRunId=${item.stepRunId}&flowId=${item.flowId}`
+      const url = `/pages_approval/pages/detail/index?runId=${item.runId}`
       console.log('跳转URL:', url)
       
       uni.navigateTo({

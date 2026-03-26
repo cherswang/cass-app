@@ -1799,42 +1799,69 @@ export default {
 			url: `/get/system/getNoReadSmsById`,
 			name: "获取消息详情信息",
 			get: async function (params) {
-				return await http.get(this.url,params);
+				return await http({
+					url: this.url,
+					method: 'GET',
+					params: params
+				});
 			}
 		},
 		setReadStatusSmsByIds: {
 			url: `/set/system/setReadStatusSmsByIds`,
 			name: "设置消息已读",
 			post: async function (data) {
-				return await http.post(this.url, data, {headers: {}});
+				return await http({
+					url: this.url,
+					method: 'POST',
+					data: data,
+					header: {
+						'Content-Type': 'application/x-www-form-urlencoded'
+					}
+				});
 			}
 		},
 		deleteSmsByIds:{
 			url: `/set/system/deleteSmsByIds`,
 			name: "批量删除消息",
 			post: async function (data) {
-				return await http.post(this.url, data, {headers: {}});
+				return await http({
+					url: this.url,
+					method: 'POST',
+					data: data
+				});
 			}
 		},
 		sendSms:{
 			url: `/set/system/sendSms`,
 			name: "发送内部短信息",
 			post: async function (data) {
-				return await http.post(this.url, data, {headers: {}});
+				return await http({
+					url: this.url,
+					method: 'POST',
+					data: data
+				});
 			}
 		},
 		updateSms:{
 			url: `/set/system/updateSms`,
 			name: "更新消息状态",
 			post: async function (data) {
-				return await http.post(this.url, data, {headers: {}});
+				return await http({
+					url: this.url,
+					method: 'POST',
+					data: data
+				});
 			}
 		},
 		deleteSms:{
 			url: `/set/system/deleteSms`,
 			name: "删除消息",
 			post: async function (data) {
-				return await http.post(this.url, data, {headers: {}});
+				return await http({
+					url: this.url,
+					method: 'POST',
+					data: data
+				});
 			}
 		},
 		getMySmsList:{
