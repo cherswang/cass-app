@@ -7,7 +7,6 @@
       </view>
       
       <view v-else-if="messageList.length === 0" class="empty-container">
-        <u-icon name="chat-dot-round" size="60" color="#c0c4cc"></u-icon>
         <text class="empty-text">暂无消息</text>
       </view>
       
@@ -67,9 +66,23 @@ export default {
       this.loading = true
       try {
         const res = await API.system.sms.getNoReadSms.get()
+        console.log('API返回数据:', res)
         if (res.code === 200) {
+          let data = res.data || []
+          console.log('消息数据:', data)
+          
+          // 确保data是数组
+          if (!Array.isArray(data)) {
+            data = []
+          }
+          
+          // 过滤无效数据
+          data = data.filter(item => {
+            return item && typeof item === 'object' && (item.smsTitle || item.smsContent)
+          })
+          
           // 为每条消息添加isRead字段，默认为false（未读）
-          this.messageList = (res.data || []).map(msg => ({
+          this.messageList = data.map(msg => ({
             ...msg,
             isRead: false
           }))
@@ -131,10 +144,34 @@ export default {
         console.error('标记已读失败:', error)
       }
       
-      // 跳转到消息详情页
-      uni.navigateTo({
-        url: `/pages_message/pages/detail/index?message=${encodeURIComponent(JSON.stringify({ ...item, isRead: true }))}`
-      })
+      // 根据消息类型处理跳转
+      if (item.view === 'NEWS') {
+        // 跳转到消息详情
+        uni.navigateTo({
+          url: `/pages_message/pages/detail/index?type=news&recordId=${item.recordId}`
+        })
+      } else if (item.view === 'NOTICE') {
+        // 跳转到通知详情
+        uni.navigateTo({
+          url: `/pages_message/pages/detail/index?type=notice&recordId=${item.recordId}`
+        })
+      } else if (item.view === 'BPM_APPROVED' || item.view === 'BPM_CHANGE_USER' || item.view === 'DOC_APPROVED' || item.view === 'DOC_CHANGE_USER') {
+        // 跳转到审批办理页面
+        let params = item.recordId.split("#")
+        uni.navigateTo({
+          url: `/pages_approval/pages/handle/index?runId=${params[0]}&stepRunId=${params[1]}&flowId=${params[2]}`
+        })
+      } else if (item.view === 'BPM_CREATE' || item.view === 'BPM_JOIN' || item.view === 'DOC_CREATE' || item.view === 'DOC_JOIN') {
+        // 跳转到查看页面
+        uni.navigateTo({
+          url: `/pages_approval/pages/detail/index?runId=${item.recordId}`
+        })
+      } else {
+        // 其他类型的消息，跳转到通用详情页
+        uni.navigateTo({
+          url: `/pages_message/pages/detail/index?type=other&recordId=${item.recordId}&view=${item.view}`
+        })
+      }
     }
   }
 }

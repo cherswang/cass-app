@@ -115,7 +115,7 @@ export default {
       bpmSortList: [],
       bpmFlowList: [],
       bpmRemark: '',
-      showClassField: false,//暂时屏蔽掉类别切换和流程分类，等后续工期给了之后再开启
+      showClassField: true,//暂时屏蔽掉类别切换和流程分类，等后续工期给了之后再开启
     };
   },
 

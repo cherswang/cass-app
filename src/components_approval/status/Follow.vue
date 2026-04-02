@@ -5,9 +5,9 @@
       <view class="filter-row">
         <view class="filter-item">
           <text class="filter-label">日期范围：</text>
-          <picker mode="date" :value="filter.date" @change="handleDateChange">
+          <picker :range="dateOptions" :value="dateValues.indexOf(filter.date)" @change="handleDateChange">
             <view class="filter-picker">
-              <text>{{ filter.date || '全部' }}</text>
+              <text>{{ dateOptions[dateValues.indexOf(filter.date)] || '全部' }}</text>
             </view>
           </picker>
         </view>
@@ -125,6 +125,9 @@ export default {
         flowIndex: 0
       },
       flowOptions: ['全部'],
+      // 日期选项
+      dateOptions: ['全部', '今日', '昨日', '上一周', '一月内', '一月前'],
+      dateValues: ['', '1', '2', '3', '4', '5'],
       
       // 搜索数据
       search: {
@@ -159,7 +162,8 @@ export default {
     
     // 处理日期选择
     handleDateChange(event) {
-      this.filter.date = event.detail.value
+      const index = event.detail.value
+      this.filter.date = this.dateValues[index]
       this.onRefresh()
     },
     
@@ -200,6 +204,7 @@ export default {
         const params = {
           page: this.page,
           pageSize: this.pageSize,
+          date: this.filter.date,
           ...this.search
         }
         
@@ -210,9 +215,17 @@ export default {
           if (this.page === 1) {
             this.approvals = data
           } else {
-            this.approvals = [...this.approvals, ...data]
+            // 数据去重，避免重复添加相同的数据
+            const existingIds = new Set(this.approvals.map(item => item.id))
+            const newData = data.filter(item => !existingIds.has(item.id))
+            this.approvals = [...this.approvals, ...newData]
+            // 如果没有新数据，说明已经加载完毕
+            this.hasMore = newData.length === this.pageSize
           }
-          this.hasMore = data.length === this.pageSize
+          // 只有在第一页时才根据数据长度设置hasMore
+          if (this.page === 1) {
+            this.hasMore = data.length === this.pageSize
+          }
         } else {
           uni.showToast({ title: res.message || '获取数据失败', icon: 'none' })
         }

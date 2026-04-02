@@ -1,6 +1,6 @@
 // 应用全局配置
-// const defaultBaseUrl = 'http://192.168.41.103:82';//测试环境地址
-const defaultBaseUrl = 'http://192.168.34.10:82';//测试环境地址
+const defaultBaseUrl = 'http://192.168.41.106:82';//测试环境地址
+// const defaultBaseUrl = 'http://192.168.34.10:82';//测试环境地址
 // const defaultBaseUrl = 'http://117.160.150.91:20082';////正式环境地址
 
 const config = {

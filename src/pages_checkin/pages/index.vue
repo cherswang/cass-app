@@ -1,51 +1,147 @@
 <template>
   <view class="container">
-    <!-- 顶部信息栏 -->
-    <view class="header">
-      <view class="user-info">
-        <view class="avatar">{{ username.charAt(0) }}</view>
-        <view class="user-text">
-          <text class="name">{{ username }}</text>
-          <text class="rule" @click="showCheckinRules">考勤规则</text>
+    <!-- 打卡页面内容 -->
+    <view v-if="activeTab === 'checkin'">
+      <!-- 顶部信息栏 -->
+      <view class="header">
+        <view class="user-info">
+          <view class="avatar">{{ username.charAt(0) }}</view>
+          <view class="user-text">
+            <text class="name">{{ username }}</text>
+            <text class="rule" @click="showCheckinRules">考勤规则</text>
+          </view>
+          <!-- <text class="record-btn" @click="viewCheckinRecord">查看记录</text> -->
         </view>
-        <!-- <text class="record-btn" @click="viewCheckinRecord">查看记录</text> -->
+        <view class="attend-record">
+          <view class="record-item">
+            <text class="label">上班{{ checkinTimeRules.morningStart }}</text>
+            <view class="record-desc">
+              <text class="time" :class="{ 'checked': morningChecked }">{{ morningCheckinTime || '未打卡' }}</text>
+            </view>
+          </view>
+          <view class="record-item">
+            <text class="label">下班{{ checkinTimeRules.afternoonEnd }}</text>
+            <view class="record-desc">
+              <text class="time" :class="{ 'checked': afternoonChecked }">{{ afternoonCheckinTime || '未打卡' }}</text>
+              <text class="update" v-if="afternoonChecked" @click="updateAfternoonCheckin">更新打卡</text>
+            </view>
+          </view>
+        </view>
       </view>
-      <view class="attend-record">
-        <view class="record-item">
-          <text class="label">上班{{ checkinTimeRules.morningStart }}</text>
-          <view class="record-desc">
-            <text class="time" :class="{ 'checked': morningChecked }">{{ morningCheckinTime || '未打卡' }}</text>
+
+      <!-- 中间打卡按钮 -->
+      <view class="checkin-area">
+        <view class="checkin-btn" @click="handleCheckin">
+          <text class="btn-title">{{ checkinType }}</text>
+          <text class="btn-date">{{ currentDate }}</text>
+          <text class="btn-time">{{ currentTime }}</text>
+        </view>
+	    <view class="checkin-tip">
+	      <text class="tip-text current-location">{{ addressInfo || '获取位置中...' }}</text>
+	    </view>
+	    <view class="checkin-tip">
+	      <text class="tip-icon">📍</text>
+	      <text class="tip-text">经度: {{ currentLocation.longitude.toFixed(6) }} | 纬度: {{ currentLocation.latitude.toFixed(6) }}</text>
+	    </view>
+	    <!-- <view class="checkin-tip">
+	      <text class="tip-icon">🏢</text>
+	      <text class="tip-text">考勤地点: {{ checkinRange.address || '公司' }}</text>
+	    </view> -->
+      </view>
+    </view>
+
+    <!-- 统计页面内容 -->
+    <view v-else-if="activeTab === 'statistic'">
+      <view class="record-filter">
+        <view class="filter-row">
+          <view class="filter-item col-2">
+            <text class="filter-label">年份：</text>
+            <picker :range="yearOptions" :value="yearIndex" @change="handleYearChange">
+              <view class="filter-picker">
+                <text class="filter-value">{{ yearOptions[yearIndex] }}</text>
+              </view>
+            </picker>
+          </view>
+          <view class="filter-item col-2">
+            <text class="filter-label">月份：</text>
+            <picker :range="monthOptions" :value="monthIndex" @change="handleMonthChange">
+              <view class="filter-picker">
+                <text class="filter-value">{{ monthOptions[monthIndex] }}</text>
+              </view>
+            </picker>
           </view>
         </view>
-        <view class="record-item">
-          <text class="label">下班{{ checkinTimeRules.afternoonEnd }}</text>
-          <view class="record-desc">
-            <text class="time" :class="{ 'checked': afternoonChecked }">{{ afternoonCheckinTime || '未打卡' }}</text>
-            <text class="update" v-if="afternoonChecked" @click="updateAfternoonCheckin">更新打卡</text>
+        <view class="filter-row">
+          <view class="filter-item col-2">
+            <text class="filter-label">状态：</text>
+            <picker :range="statusOptions" :value="statusIndex" @change="handleStatusChange">
+              <view class="filter-picker">
+                <text class="filter-value">{{ statusOptions[statusIndex] }}</text>
+              </view>
+            </picker>
           </view>
+          <view class="filter-item col-2">
+            <text class="filter-label">方式：</text>
+            <picker :range="typeOptions" :value="typeIndex" @change="handleTypeChange">
+              <view class="filter-picker">
+                <text class="filter-value">{{ typeOptions[typeIndex] }}</text>
+              </view>
+            </picker>
+          </view>
+        </view>
+      </view>
+      <view class="record-list">
+        <view class="record-item" v-for="item in checkinRecords" :key="item.attendId">
+          <view class="item-date">
+            <text class="date-text">{{ item.nowTime || '无' }}</text>
+          </view>
+          <view class="item-detail">
+            <!-- 核心数据：打卡时间 -->
+            <view class="detail-row">
+              <text class="detail-label">打卡时间：</text>
+              <text class="detail-value">{{ item.createTime || '无' }}</text>
+            </view>
+            <!-- 核心数据：打卡方式 -->
+            <view class="detail-row">
+              <text class="detail-label">打卡方式：</text>
+              <text class="detail-value">{{ item.status === 1 ? '已打卡' : item.status === 2 ? '下班打卡' : '无' }}</text>
+            </view>
+            <!-- 核心数据：打卡状态 -->
+            <view class="detail-row">
+              <text class="detail-label">打卡状态：</text>
+              <text class="detail-status" :class="getAttendTypeClass(item.attendType)">
+                {{ getAttendTypeText(item.attendType) || '无' }}
+              </text>
+            </view>
+            <!-- 核心数据：备注 -->
+            <view class="detail-row">
+              <text class="detail-label">备注：</text>
+              <text class="detail-value">{{ item.remark || '无' }}</text>
+            </view>
+          </view>
+        </view>
+        <view class="empty-state" v-if="checkinRecords.length === 0 && !loading">
+          <text class="empty-text">无</text>
+        </view>
+        <view class="loading-state" v-if="loading">
+          <text class="loading-text">加载中...</text>
+        </view>
+        <view class="load-more" v-if="!loading && hasMore && checkinRecords.length > 0" @click="loadMore">
+          <text class="load-more-text">加载更多</text>
+        </view>
+        <view class="no-more" v-if="!hasMore && checkinRecords.length > 0">
+          <text class="no-more-text">没有更多数据了</text>
         </view>
       </view>
     </view>
 
-    <!-- 中间打卡按钮 -->
-    <view class="checkin-area">
-      <view class="checkin-btn" @click="handleCheckin">
-        <text class="btn-title">{{ checkinType }}</text>
-        <text class="btn-date">{{ currentDate }}</text>
-        <text class="btn-time">{{ currentTime }}</text>
+    <!-- 设置页面内容 -->
+    <!-- <view v-else-if="activeTab === 'settings'">
+      <view class="settings-content">
+        <text class="settings-title">设置</text>
+        <text class="settings-desc">设置功能开发中...</text>
       </view>
-	  <view class="checkin-tip">
-	    <text class="tip-text current-location">{{ addressInfo || '获取位置中...' }}</text>
-	  </view>
-	  <view class="checkin-tip">
-	    <text class="tip-icon">📍</text>
-	    <text class="tip-text">经度: {{ currentLocation.longitude.toFixed(6) }} | 纬度: {{ currentLocation.latitude.toFixed(6) }}</text>
-	  </view>
-	  <view class="checkin-tip">
-	    <text class="tip-icon">🏢</text>
-	    <text class="tip-text">考勤地点: {{ checkinRange.address || '公司' }}</text>
-	  </view>
-    </view>
+    </view> -->
     
     <!-- 打卡确认弹窗 -->
     <view class="checkin-confirm" v-if="showConfirmDialog">
@@ -71,6 +167,22 @@
           </button>
         </view>
       </view>
+    </view>
+    
+    <!-- 底部导航栏 -->
+    <view class="bottom-nav">
+      <view class="nav-item" :class="{ active: activeTab === 'checkin' }" @click="switchTab('checkin')">
+        <!-- <text class="nav-icon">📍</text> -->
+        <text class="nav-text">打卡</text>
+      </view>
+      <view class="nav-item" :class="{ active: activeTab === 'statistic' }" @click="switchTab('statistic')">
+        <!-- <text class="nav-icon">📊</text> -->
+        <text class="nav-text">统计</text>
+      </view>
+      <!-- <view class="nav-item" :class="{ active: activeTab === 'settings' }" @click="switchTab('settings')">
+        <text class="nav-icon">⚙️</text>
+        <text class="nav-text">设置</text>
+      </view> -->
     </view>
   </view>
 </template>
@@ -128,7 +240,30 @@ export default {
         lat: 0,
         disc: 500, // 默认500米
         address: ''
-      }
+      },
+      // 当前激活的标签页
+      activeTab: 'checkin',
+      // 年份选项
+      yearOptions: ['全部', '2024', '2025', '2026', '2027', '2028'],
+      yearIndex: 0,
+      // 月份选项
+      monthOptions: ['全部', '一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'],
+      monthIndex: 0,
+      // 打卡状态选项
+      statusOptions: ['全部', '上班打卡', '下班打卡'],
+      statusIndex: 0,
+      // 打卡类型选项
+      typeOptions: ['全部', '正常', '补卡', '迟到', '有事早退', '早退'],
+      typeIndex: 0,
+      // 打卡记录
+      checkinRecords: [],
+      // 加载状态
+      loading: false,
+      // 分页参数
+      page: 1,
+      pageSize: 15,
+      // 是否有更多数据
+      hasMore: true
     };
   },
   computed: {
@@ -494,6 +629,196 @@ export default {
       uni.navigateTo({
         url: '/pages_checkin/pages/record/index'
       });
+    },
+    // 切换标签页
+    switchTab(tab) {
+      this.activeTab = tab;
+      // 切换导航栏标题
+      if (tab === 'checkin') {
+        uni.setNavigationBarTitle({ title: '考勤打卡' });
+      } else if (tab === 'statistic') {
+        uni.setNavigationBarTitle({ title: '打卡统计' });
+      }
+      // 切换到统计标签时，获取年份选项并查询打卡记录
+      if (tab === 'statistic') {
+        this.getYearOptions();
+        this.searchRecords();
+      }
+    },
+    // 获取年份选项
+    async getYearOptions() {
+      try {
+        const res = await API.office.attend.getMyAttendYear.get();
+        if (res.code === 200) {
+          // 从返回的数据中提取value字段作为年份选项
+          const years = res.data.map(item => item.value);
+          this.yearOptions = ['全部', ...years];
+        }
+      } catch (error) {
+        console.error('获取年份选项失败:', error);
+      }
+    },
+    // 处理年份选择
+    handleYearChange(e) {
+      this.yearIndex = e.detail.value;
+      // 筛选条件变化时，重新从第一页开始加载
+      this.searchRecords();
+    },
+    // 处理月份选择
+    handleMonthChange(e) {
+      this.monthIndex = e.detail.value;
+      // 筛选条件变化时，重新从第一页开始加载
+      this.searchRecords();
+    },
+    // 处理状态选择
+    handleStatusChange(e) {
+      this.statusIndex = e.detail.value;
+      // 筛选条件变化时，重新从第一页开始加载
+      this.searchRecords();
+    },
+    // 处理类型选择
+    handleTypeChange(e) {
+      this.typeIndex = e.detail.value;
+      // 筛选条件变化时，重新从第一页开始加载
+      this.searchRecords();
+    },
+    // 查询打卡记录
+    async searchRecords() {
+      // 重置分页参数
+      this.page = 1;
+      this.hasMore = true;
+      this.loading = true;
+      try {
+        // 构建查询参数，只包含非空值
+        const params = {
+          page: this.page,
+          pageSize: this.pageSize
+        };
+        if (this.yearIndex > 0) {
+          params.year = this.yearOptions[this.yearIndex];
+        }
+        if (this.monthIndex > 0) {
+          // 将中文月份转换为数字格式（如"一月" -> "01"）
+          const monthMap = {
+            '一月': '01', '二月': '02', '三月': '03', '四月': '04',
+            '五月': '05', '六月': '06', '七月': '07', '八月': '08',
+            '九月': '09', '十月': '10', '十一月': '11', '十二月': '12'
+          };
+          params.month = monthMap[this.monthOptions[this.monthIndex]] || '';
+        }
+        if (this.statusIndex > 0) {
+          params.status = this.statusIndex;
+        }
+        if (this.typeIndex > 0) {
+          params.attendType = this.typeIndex - 1;
+        }
+        
+        console.log('查询参数:', params);
+        
+        const res = await API.office.attend.getMyAttendList.get(params);
+        console.log('查询结果:', res);
+        
+        if (res.code === 200) {
+          // 从响应数据中提取list字段
+          this.checkinRecords = res.data?.list || [];
+          // 检查是否还有更多数据
+          this.hasMore = this.checkinRecords.length >= this.pageSize;
+        } else {
+          uni.showToast({ title: res.message || '查询失败', icon: 'none' });
+        }
+      } catch (error) {
+        console.error('查询打卡记录失败:', error);
+        uni.showToast({ title: error.message || '查询失败', icon: 'none' });
+      } finally {
+        this.loading = false;
+      }
+    },
+    // 加载更多数据
+    async loadMore() {
+      if (this.loading || !this.hasMore) {
+        return;
+      }
+      
+      this.page++;
+      this.loading = true;
+      try {
+        // 构建查询参数，只包含非空值
+        const params = {
+          page: this.page,
+          pageSize: this.pageSize
+        };
+        if (this.yearIndex > 0) {
+          params.year = this.yearOptions[this.yearIndex];
+        }
+        if (this.monthIndex > 0) {
+          // 将中文月份转换为数字格式（如"一月" -> "01"）
+          const monthMap = {
+            '一月': '01', '二月': '02', '三月': '03', '四月': '04',
+            '五月': '05', '六月': '06', '七月': '07', '八月': '08',
+            '九月': '09', '十月': '10', '十一月': '11', '十二月': '12'
+          };
+          params.month = monthMap[this.monthOptions[this.monthIndex]] || '';
+        }
+        if (this.statusIndex > 0) {
+          params.status = this.statusIndex;
+        }
+        if (this.typeIndex > 0) {
+          params.attendType = this.typeIndex - 1;
+        }
+        
+        console.log('加载更多参数:', params);
+        
+        const res = await API.office.attend.getMyAttendList.get(params);
+        console.log('加载更多结果:', res);
+        
+        if (res.code === 200) {
+          // 从响应数据中提取list字段
+          const newData = res.data?.list || [];
+          // 合并数据
+          this.checkinRecords = [...this.checkinRecords, ...newData];
+          // 检查是否还有更多数据
+          this.hasMore = newData.length >= this.pageSize;
+        } else {
+          uni.showToast({ title: res.message || '加载失败', icon: 'none' });
+        }
+      } catch (error) {
+        console.error('加载更多失败:', error);
+        uni.showToast({ title: error.message || '加载失败', icon: 'none' });
+      } finally {
+        this.loading = false;
+      }
+    },
+    // 获取打卡状态文本
+    getAttendTypeText(type) {
+      switch (type) {
+        case '0':
+          return '正常';
+        case '1':
+          return '补卡';
+        case '2':
+          return '迟到';
+        case '3':
+          return '有事早退';
+        case '4':
+          return '早退';
+        default:
+          return '未知';
+      }
+    },
+    // 获取打卡状态样式
+    getAttendTypeClass(type) {
+      switch (type) {
+        case '0':
+          return 'status-normal';
+        case '1':
+          return 'status-makeup';
+        case '2':
+        case '3':
+        case '4':
+          return 'status-abnormal';
+        default:
+          return 'status-unknown';
+      }
     }
   }
 }
@@ -501,9 +826,10 @@ export default {
 
 <style lang="scss">
 .container {
-  padding: 12px;
+  padding: 12px 12px 80px;
   min-height: 100vh;
   background-color: #f5f5f5;
+  box-sizing: border-box;
 }
 
 .header {
@@ -819,5 +1145,302 @@ export default {
   border: none;
   border-radius: 8px;
   font-size: 15px;
+}
+
+/* 底部导航栏 */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background-color: white;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  border-top: 1px solid #f0f0f0;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+  z-index: 999;
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  height: 100%;
+  color: #999;
+}
+
+.nav-item.active {
+  color: #1890ff;
+}
+
+.nav-icon {
+  font-size: 20px;
+  margin-bottom: 2px;
+}
+
+.nav-text {
+  font-size: 12px;
+}
+
+/* 统计页面样式 */
+.statistic-content {
+  padding: 20px;
+  text-align: center;
+}
+
+.statistic-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #262626;
+  margin-bottom: 20px;
+  display: block;
+}
+
+.statistic-desc {
+  font-size: 14px;
+  color: #999;
+}
+
+/* 设置页面样式 */
+.settings-content {
+  padding: 20px;
+  text-align: center;
+}
+
+.settings-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #262626;
+  margin-bottom: 20px;
+  display: block;
+}
+
+.settings-desc {
+  font-size: 14px;
+}
+
+/* 打卡记录相关样式 */
+.record-filter {
+  background: white;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.filter-row {
+  display: flex;
+  margin-bottom: 8px;
+}
+
+.filter-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  width: 100%;
+}
+
+.filter-item.col-2 {
+  flex: 1;
+  margin-right: 8px;
+  margin-bottom: 0;
+}
+
+.filter-item.col-2:last-child {
+  margin-right: 0;
+}
+
+.filter-label {
+  font-size: 12px;
+  color: #5a5a5a;
+  margin-right: 6px;
+  flex-shrink: 0;
+  min-width: 60px;
+}
+
+.filter-picker {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+  min-width: 0;
+  height: 32px;
+}
+
+.filter-value {
+  font-size: 12px;
+  color: #262626;
+}
+
+.filter-arrow {
+  font-size: 11px;
+  color: #999;
+  margin-left: 8px;
+}
+
+.filter-btn {
+  width: 100%;
+  margin-top: 8px;
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+}
+
+.search-btn {
+  background-color: #1890ff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 16px;
+  font-size: 12px;
+  height: 28px;
+  line-height: 16px;
+}
+
+.record-list {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  min-height: 300px;
+}
+
+.record-item {
+  padding: 15px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.record-item:last-child {
+  border-bottom: none;
+}
+
+.item-date {
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.date-text {
+  font-size: 14px;
+  font-weight: 500;
+  color: #262626;
+}
+
+.item-detail {
+  padding-left: 5px;
+}
+
+.detail-row {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.detail-row:last-child {
+  margin-bottom: 0;
+}
+
+.detail-label {
+  font-size: 13px;
+  color: #999;
+  width: 80px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.detail-value {
+  font-size: 13px;
+  color: #262626;
+  flex: 1;
+  line-height: 1.4;
+}
+
+.detail-time {
+  font-size: 13px;
+  color: #262626;
+}
+
+.detail-status {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-top: 2px;
+}
+
+.status-normal {
+  background: #f6ffed;
+  color: #52c41a;
+}
+
+.status-makeup {
+  background: #e6f7ff;
+  color: #1890ff;
+}
+
+.status-abnormal {
+  background: #fff2f0;
+  color: #ff4d4f;
+}
+
+.status-unknown {
+  background: #f5f5f5;
+  color: #999;
+}
+
+.empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+}
+
+.empty-text {
+  font-size: 14px;
+  color: #999;
+}
+
+.loading-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100px;
+}
+
+.loading-text {
+  font-size: 14px;
+  color: #999;
+}
+
+.load-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 15px;
+  margin-top: 10px;
+}
+
+.load-more-text {
+  font-size: 14px;
+  color: #1890ff;
+}
+
+.no-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 15px;
+  margin-top: 10px;
+}
+
+.no-more-text {
+  font-size: 14px;
+  color: #999;
 }
 </style>

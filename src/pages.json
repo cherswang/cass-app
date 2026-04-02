@@ -73,7 +73,7 @@
         {
           "path": "index",
           "style": {
-            "navigationBarTitleText": "打卡"
+            "navigationBarTitleText": "考勤打卡"
           }
         },
         {
@@ -690,12 +690,12 @@
         "selectedIconPath": "static/images/tabbar/home_.png",
         "text": "应用中心"
       },
-      // {
-      //   "pagePath": "pages_message/pages/index",
-      //   "iconPath": "static/images/tabbar/work.png",
-      //   "selectedIconPath": "static/images/tabbar/work_.png",
-      //   "text": "消息"
-      // },
+      {
+        "pagePath": "pages_message/pages/index",
+        "iconPath": "static/images/tabbar/work.png",
+        "selectedIconPath": "static/images/tabbar/work_.png",
+        "text": "消息"
+      },
       {
         "pagePath": "pages/mine",
         "iconPath": "static/images/tabbar/mine.png",

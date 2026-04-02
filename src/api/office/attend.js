@@ -42,5 +42,27 @@ export default {
         }
       });
     }
+  },
+  getMyAttendList: {
+    url: `/get/office/getMyAttendList`,
+    name: "获取打卡记录列表",
+    get: async function (params) {
+      return await http({
+        url: this.url,
+        method: 'GET',
+        params: params
+      });
+    }
+  },
+  getMyAttendYear: {
+    url: `/get/office/getMyAttendYear`,
+    name: "获取打卡年份列表",
+    get: async function (params) {
+      return await http({
+        url: this.url,
+        method: 'GET',
+        params: params
+      });
+    }
   }
 };
