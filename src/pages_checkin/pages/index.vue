@@ -91,7 +91,7 @@
         </view>
       </view>
       <view class="record-list">
-        <view class="record-item" v-for="item in checkinRecords" :key="item.attendId">
+        <view class="record-item statistic-item" v-for="item in checkinRecords" :key="item.attendId">
           <view class="item-date">
             <text class="date-text">{{ item.nowTime || '无' }}</text>
           </view>
@@ -1153,13 +1153,13 @@ export default {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 60px;
+  height: 65px;
   background-color: white;
   display: flex;
   justify-content: space-around;
   align-items: center;
-  border-top: 1px solid #f0f0f0;
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+  border-top: 1px solid #e0e0e0;
+  box-shadow: 0 -2px 15px rgba(0, 0, 0, 0.1);
   z-index: 999;
 }
 
@@ -1170,20 +1170,24 @@ export default {
   justify-content: center;
   flex: 1;
   height: 100%;
-  color: #999;
+  color: #666;
+  font-weight: 500;
+  transition: all 0.3s ease;
 }
 
 .nav-item.active {
   color: #1890ff;
+  font-weight: 600;
 }
 
 .nav-icon {
-  font-size: 20px;
-  margin-bottom: 2px;
+  font-size: 24px;
+  margin-bottom: 4px;
 }
 
 .nav-text {
-  font-size: 12px;
+  font-size: 14px;
+  font-weight: 500;
 }
 
 /* 统计页面样式 */
@@ -1267,11 +1271,18 @@ export default {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 6px 10px;
-  background-color: #f5f5f5;
-  border-radius: 4px;
+  padding: 8px 12px;
+  background-color: #ffffff;
+  border: 1px solid #6db6fa;
+  border-radius: 6px;
   min-width: 0;
-  height: 32px;
+  height: 36px;
+  transition: all 0.3s ease;
+}
+
+.filter-picker:active {
+  background-color: #f0f5ff;
+  border-color: #40a9ff;
 }
 
 .filter-value {
@@ -1311,29 +1322,43 @@ export default {
   min-height: 300px;
 }
 
-.record-item {
+.statistic-item {
   padding: 15px;
   border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
 }
 
-.record-item:last-child {
+.statistic-item:last-child {
   border-bottom: none;
 }
 
+.item-detail {
+  padding-left: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
 .item-date {
-  margin-bottom: 10px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid #f5f5f5;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #f0f0f0;
+  width: 100%;
 }
 
 .date-text {
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 16px;
+  font-weight: 600;
   color: #262626;
 }
 
 .item-detail {
-  padding-left: 5px;
+  padding-left: 0;
+  width: 100%;
 }
 
 .detail-row {

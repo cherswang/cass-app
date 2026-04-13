@@ -438,6 +438,8 @@ onMounted(() => {
   getCode();//获取图形验证码
   // getTenant();
   
+  //App端进行编译
+  // #ifdef APP-PLUS
   // 监听键盘事件
   uni.onKeyboardHeightChange((res) => {
     if (res.height > 0) {
@@ -451,6 +453,7 @@ onMounted(() => {
       }, 100);
     }
   });
+  // #endif
 });
 </script>
 

@@ -7,14 +7,16 @@ export function login(data) {
   return request({
     url: '/capi/get/system/login',
     method: 'POST',
-    header: {
-      'content-type': 'application/x-www-form-urlencoded'
+	isToken: false,
+	header: {
+      'content-type': 'application/x-www-form-urlencoded',
     },
     data: {
       accountId: data.accountId,
       passWord: data.passWord,
       code: data.code || '',
-      encyCode: data.encyCode || ''
+      encyCode: data.encyCode || '',
+	  clientid: config.clientID   // 👈 放参数里，绝对不跨域
     }
   })
 }

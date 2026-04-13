@@ -25,7 +25,7 @@ const request = <T>(config:RequestConfig):Promise<ResponseData<T>> => {
     }
   }
   
-  const requestUrl = config.baseUrl || baseUrl + finalUrl;
+  const requestUrl = (config.baseUrl || baseUrl) + finalUrl;
   
   // 是否需要设置 token
   const isToken = (config.header || {}).isToken === false
@@ -75,6 +75,8 @@ const request = <T>(config:RequestConfig):Promise<ResponseData<T>> => {
       url: requestUrl,
       data: requestData,
       header: config.header,
+	  // 👇 只加这一行！！！
+		withCredentials: true, // 允许携带 cookie
       dataType: config.responseType === 'arraybuffer' ? 'arraybuffer' : 'json',
       responseType: config.responseType === 'arraybuffer' ? 'arraybuffer' : 'text'
     }).then(response => {
@@ -158,7 +160,9 @@ const request = <T>(config:RequestConfig):Promise<ResponseData<T>> => {
         console.log('❌ 错误信息:', error);
         console.log('❌ ====== 请求错误结束 ======');
         
-        let { message } = error
+        // 安全获取 message，没有就给空字符串
+        let message = error?.message || '';
+		  
         if (message === 'Network Error') {
           message = '后端接口连接异常'
         } else if (message.includes('timeout')) {
@@ -166,7 +170,7 @@ const request = <T>(config:RequestConfig):Promise<ResponseData<T>> => {
         } else if (message.includes('Request failed with status code')) {
           message = '系统接口' + message.substr(message.length - 3) + '异常'
         }
-        toast(message)
+        toast(message || '请求失败，请稍后重试')
         reject(error)
       })
   })

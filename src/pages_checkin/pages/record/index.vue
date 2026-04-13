@@ -435,6 +435,31 @@ export default {
 .record-item {
   padding: 15px;
   border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.item-date {
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #f0f0f0;
+  width: 100%;
+}
+
+.date-text {
+  font-size: 16px;
+  font-weight: 600;
+  color: #262626;
+}
+
+.item-detail {
+  padding-left: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
 }
 
 .record-item:last-child {
