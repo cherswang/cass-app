@@ -61,7 +61,6 @@ export default {
     this.getNoReadSms()
   },
   methods: {
-    // 获取未读消息
     async getNoReadSms() {
       this.loading = true
       try {
@@ -69,19 +68,10 @@ export default {
         console.log('API返回数据:', res)
         if (res.code === 200) {
           let data = res.data || []
-          console.log('消息数据:', data)
-          
-          // 确保data是数组
-          if (!Array.isArray(data)) {
-            data = []
-          }
-          
-          // 过滤无效数据
+          if (!Array.isArray(data)) data = []
           data = data.filter(item => {
             return item && typeof item === 'object' && (item.smsTitle || item.smsContent)
           })
-          
-          // 为每条消息添加isRead字段，默认为false（未读）
           this.messageList = data.map(msg => ({
             ...msg,
             isRead: false
@@ -97,20 +87,16 @@ export default {
       }
     },
     
-    // 刷新消息
     refreshMessages() {
       this.getNoReadSms()
     },
     
-    // 标记全部已读
     async markAllRead() {
       if (this.messageList.length === 0) {
         uni.showToast({ title: '暂无未读消息', icon: 'none' })
         return
       }
-      
       const smsIdArr = this.messageList.map(item => item.smsId)
-      
       try {
         const res = await API.system.sms.setReadStatusSmsByIds.post({ ids: smsIdArr })
         if (res.code === 200) {
@@ -121,18 +107,15 @@ export default {
         }
       } catch (error) {
         console.error('标记已读失败:', error)
-        uni.showToast({ title: '标记已读失败', icon: 'none' })
+        uni.showToast({ title: '标记失败', icon: 'none' })
       }
     },
     
-    // 查看消息详情
     async showMessageDetail(item) {
-      // 标记为已读
       const smsIdArr = [item.smsId]
       try {
         const res = await API.system.sms.setReadStatusSmsByIds.post({ ids: smsIdArr })
         if (res.code === 200) {
-          // 更新消息的已读状态
           this.messageList = this.messageList.map(msg => {
             if (msg.smsId === item.smsId) {
               return { ...msg, isRead: true }
@@ -144,30 +127,24 @@ export default {
         console.error('标记已读失败:', error)
       }
       
-      // 根据消息类型处理跳转
       if (item.view === 'NEWS') {
-        // 跳转到消息详情
         uni.navigateTo({
           url: `/pages_message/pages/detail/index?type=news&recordId=${item.recordId}`
         })
       } else if (item.view === 'NOTICE') {
-        // 跳转到通知详情
         uni.navigateTo({
           url: `/pages_message/pages/detail/index?type=notice&recordId=${item.recordId}`
         })
       } else if (item.view === 'BPM_APPROVED' || item.view === 'BPM_CHANGE_USER' || item.view === 'DOC_APPROVED' || item.view === 'DOC_CHANGE_USER') {
-        // 跳转到审批办理页面
         let params = item.recordId.split("#")
         uni.navigateTo({
           url: `/pages_approval/pages/handle/index?runId=${params[0]}&stepRunId=${params[1]}&flowId=${params[2]}`
         })
       } else if (item.view === 'BPM_CREATE' || item.view === 'BPM_JOIN' || item.view === 'DOC_CREATE' || item.view === 'DOC_JOIN') {
-        // 跳转到查看页面
         uni.navigateTo({
           url: `/pages_approval/pages/detail/index?runId=${item.recordId}`
         })
       } else {
-        // 其他类型的消息，跳转到通用详情页
         uni.navigateTo({
           url: `/pages_message/pages/detail/index?type=other&recordId=${item.recordId}&view=${item.view}`
         })
@@ -182,11 +159,11 @@ export default {
   width: 100%;
   height: 100%;
   background-color: #f8f8f8;
+  padding-bottom: 160rpx;
 }
 
 .fixed-actions {
   position: fixed;
-  bottom: 0;
   left: 0;
   right: 0;
   display: flex;
@@ -196,6 +173,7 @@ export default {
   border-top: 1rpx solid #f0f0f0;
   z-index: 999;
   box-shadow: 0 -2rpx 8rpx rgba(0, 0, 0, 0.05);
+  bottom: 110rpx; /* 关键修复 */
 }
 
 .fixed-btn {
@@ -229,8 +207,8 @@ export default {
 }
 
 .message-list {
-  flex: 1;
-  padding: 16rpx 0 120rpx 0;
+  width: 100%;
+  padding: 16rpx 0;
 }
 
 .loading-container {

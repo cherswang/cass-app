@@ -386,8 +386,15 @@ export default {
     },
     // 执行获取位置操作
     doGetLocation() {
+		// #ifdef APP-PLUS
+		  let locationType = 'gcj02'; // APP必须用这个，地图/编码都正常
+		  // #endif
+		
+		  // #ifdef H5
+		  let locationType = 'wgs84'; // H5只能用这个，否则报坐标系转换失败
+		  // #endif
       uni.getLocation({
-        type: 'gcj02',
+        type: locationType, // 自动适配平台
         altitude: true,
         accuracy: 'high',
         success: (res) => {
